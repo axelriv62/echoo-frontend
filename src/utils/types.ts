@@ -73,3 +73,7 @@ type User = {
     followedPages : Page[] | null,
     reactions: Reaction[] | null,
 }
+
+type Token = {
+    token: string
+}
