@@ -1,34 +1,27 @@
-import { useState } from 'react';
 import { Routes, Route } from "react-router";
 import './App.css'
 import { deactivate } from './hooks/auth';
 import RegisterPage from './pages/RegisterPage'
 import AuthForm from "./components/login/Login";
 
-function HOME() {
-    const [token, setToken] = useState('');
-
+function DEACTIVATE() {
     const handleDeactivate = async () => {
-        if (!token) {
-            alert('Veuillez entrer un token');
-            return;
-        }
-        localStorage.setItem('authToken', token);
         await deactivate();
     };
 
     return (
         <div>
-            <h2>Bienvenue sur Echoo</h2>
-            <input
-                type="text"
-                placeholder="Entrez votre token"
-                value={token}
-                onChange={(e) => setToken(e.target.value)}
-            />
             <button onClick={handleDeactivate}>
                 Désactiver mon compte
             </button>
+        </div>
+    );
+}
+
+function HOME() {
+    return (
+        <div>
+            <h2>Bienvenue sur Echoo</h2>
             <p>Ceci est la page d'accueil.</p>
         </div>
     );
@@ -53,6 +46,7 @@ function App() {
             <Route path="/" element={<HOME />} />
             <Route path="/login" element={<LOGIN />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/deactivate" element={<DEACTIVATE />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
     )
