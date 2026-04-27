@@ -3,6 +3,7 @@ import './App.css'
 import { deactivate } from './hooks/auth';
 import RegisterPage from './pages/RegisterPage'
 import AuthForm from "./components/login/Login";
+import {useState} from "react";
 
 function DEACTIVATE() {
     const handleDeactivate = async () => {
@@ -36,20 +37,22 @@ function ERROR() {
     );
 }
 
-function LOGIN() {
-    return <AuthForm token={null} />;
+function LOGIN({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
+  return <AuthForm token={token} setToken={setToken} />;
 }
 
 function App() {
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem("authToken"));
     return (
         <Routes>
             <Route path="/" element={<HOME />} />
-            <Route path="/login" element={<LOGIN />} />
+            <Route path="/login" element={<LOGIN token={token} setToken={setToken} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/deactivate" element={<DEACTIVATE />} />
+            <Route path="/auth" element={<LOGIN token={token} setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
     )
 }
 
-export default App
+export default App;

@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { signin } from "../../hooks/auth";
+import AuthButton from "../AuthButton";
 
 interface AuthFormProps {
     token: string | null;
+    setToken: (token: string | null) => void;
 }
 
-const AuthForm: React.FC<AuthFormProps> = ({ token }) => {
+const AuthForm: React.FC<AuthFormProps> = ({ token, setToken }) => {
     const [user, setUser] = useState({ name: "", password: "" });
     const [loading, setLoading] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -15,6 +17,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ token }) => {
         try {
             setLoading(true);
             await signin(user.name, user.password);
+            const storedToken = localStorage.getItem("authToken");
+            setToken(storedToken);
             setIsLoggedIn(true);
         } catch {
             setIsLoggedIn(false);
@@ -32,8 +36,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ token }) => {
                         Bienvenue {user.name} 👋
                     </h1>
                     <p className="mt-2 text-slate-600">Connexion réussie.</p>
-                    <button onClick={() => window.location.href = "/"}
-                    >L'accueil c'est par là</button>
+                    <div className="mt-4 flex justify-center">
+                        <AuthButton
+                            token={token}
+                            setToken={setToken}
+                            onLogout={() => setIsLoggedIn(false)}
+                        />
+                    </div>
                 </div>
             </div>
         );
