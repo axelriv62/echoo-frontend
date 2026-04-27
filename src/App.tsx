@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router";
 import './App.css'
+import RegisterPage from './pages/RegisterPage'
 
 function HOME() {
   return (
@@ -23,6 +24,7 @@ function App() {
   return (
     <Routes>
         <Route path="/" element={<HOME />} />
+        <Route path="/register" element={<RegisterPage />} />
        <Route path="*" element={<ERROR />} />
     </Routes>
   )
