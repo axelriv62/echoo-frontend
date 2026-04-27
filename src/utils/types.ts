@@ -1,33 +1,16 @@
-type Ban = {
-    admin : unknown,
-    bannedAt: string,
-    unbannedAt : string | null,
-    reason: string | null,
-}
+/**
+ * TypeScript types for the data models used in the application.
+ * These types define the structure of the data returned by the backend API and used throughout the frontend application.
+ */
 
 type Comment = {
     id: string,
-    user: unknown,
-    post: unknown,
-    parentComment: unknown | null,
-    childrenComments: unknown[] | null,
+    user: User,
+    postId: string,
+    parentCommentId: string | null,
     content: string,
-    deleted: boolean,
     createdAt: string,
     updatedAt: string | null,
-}
-
-type Reaction = {
-    id: string,
-    type: string,
-    user: unknown,
-    post: Post,
-    createdAt: string,
-}
-
-type Topic = {
-    id: string,
-    name: string,
 }
 
 type Page = {
@@ -43,8 +26,8 @@ type Page = {
 
 type Post = {
     id: string,
-    user: unknown,
-    page: unknown,
+    user: User,
+    page: Page,
     title: string,
     description: string | null,
     urlImage: string | null,
@@ -56,20 +39,15 @@ type Post = {
     updatedAt: string | null,
 }
 
+type Topic = {
+    id: string,
+    name: string,
+}
+
 type User = {
     id: string,
     username: string,
-    password: string,
-    roles: string[],
-    email : string,
     imageProfile: string | null,
-    ignoredUsers: unknown[],
-    followedUsers: unknown[],
-    createdAt : string,
-    enabled: boolean,
-    credentialsNonExpired: boolean,
-    accountNonLocked: boolean,
-    banHistory: Ban[] | null,
-    followedPages : Page[] | null,
-    reactions: Reaction[] | null,
+    followedPages: { pageId: string, rolePage: string }[] | null,
+    followedUsers: unknown[] | null, // TODO: la doc swagger est pas claire là-dessus, à tester avec bruno
 }
