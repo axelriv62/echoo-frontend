@@ -1,6 +1,7 @@
 import { Routes, Route } from "react-router";
 import './App.css'
 import RegisterPage from './pages/RegisterPage'
+import AuthForm from "./components/login/Login";
 
 function HOME() {
   return (
@@ -20,12 +21,18 @@ function ERROR() {
   );
 }
 
+function LOGIN() {
+    return <AuthForm token={null} />;
+}
+
 function App() {
   return (
     <Routes>
         <Route path="/" element={<HOME />} />
+        <Route path="*" element={<ERROR />} />
+        <Route path="/login" element={<LOGIN />} />
         <Route path="/register" element={<RegisterPage />} />
-       <Route path="*" element={<ERROR />} />
+        <Route path="/login" element={<LOGIN />} />
     </Routes>
   )
 }
