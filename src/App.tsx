@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router";
 import './App.css'
 import { deactivate } from './hooks/auth';
 import RegisterPage from './pages/RegisterPage'
+import AuthForm from "./components/login/Login";
 
 function HOME() {
     const [token, setToken] = useState('');
@@ -42,10 +43,15 @@ function ERROR() {
     );
 }
 
+function LOGIN() {
+    return <AuthForm token={null} />;
+}
+
 function App() {
     return (
         <Routes>
             <Route path="/" element={<HOME />} />
+            <Route path="/login" element={<LOGIN />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
