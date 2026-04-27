@@ -5,9 +5,16 @@ import RegisterPage from './pages/RegisterPage'
 import AuthForm from "./components/login/Login";
 import {useState} from "react";
 
+import { useNavigate } from "react-router";
+
 function DEACTIVATE() {
+    const [message, setMessage] = useState<string | null>(null);
+    const navigate = useNavigate();
+
     const handleDeactivate = async () => {
         await deactivate();
+        setMessage('Votre compte a été désactivé avec succès');
+        setTimeout(() => navigate('/'), 2000);
     };
 
     return (
@@ -15,6 +22,7 @@ function DEACTIVATE() {
             <button onClick={handleDeactivate}>
                 Désactiver mon compte
             </button>
+            {message && <p>{message}</p>}
         </div>
     );
 }
