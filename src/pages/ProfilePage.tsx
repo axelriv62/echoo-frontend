@@ -7,7 +7,14 @@ import { useState } from "react";
 
 const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
-    const { profile, loading, error } = useProfile(token);
+    const {
+        profile,
+        loading,
+        error,
+        updateProfile,
+        updating,
+        updateError,
+    } = useProfile(token);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
     const handleLogout = () => {
@@ -24,6 +31,23 @@ const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (tok
             setToken(null);
             setTimeout(() => navigate('/login'), 1500);
         }
+    };
+
+    const handleProfileUpdate = async (payload: Parameters<typeof updateProfile>[0]) => {
+        const result = await updateProfile(payload);
+        if (result.requiresReauth) {
+            localStorage.removeItem(TOKEN_KEY);
+            setToken(null);
+            setTimeout(() =>
+                navigate("/login", {
+                    state: {
+                        message: "Modification réussie : Reconnecte-toi avec ton nouveau nom d'utilisateur pour continuer.",
+                    },
+                })
+            );
+        }
+
+        return result.user;
     };
 
     if (!token) {
@@ -82,7 +106,14 @@ const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (tok
                 )}
 
                 <div className="flex justify-center">
-                    <ProfileCard profile={profile} loading={loading} error={error} />
+                    <ProfileCard
+                        profile={profile}
+                        loading={loading}
+                        error={error}
+                        onUpdate={handleProfileUpdate}
+                        updating={updating}
+                        updateError={updateError}
+                    />
                 </div>
             </div>
         </div>
