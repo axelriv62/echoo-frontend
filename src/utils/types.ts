@@ -1,36 +1,19 @@
-type Ban = {
-    admin : unknown,
-    bannedAt: string,
-    unbannedAt : string | null,
-    reason: string | null,
-}
+/**
+ * TypeScript types for the data models used in the application.
+ * These types define the structure of the data returned by the backend API and used throughout the frontend application.
+ */
 
-type Comment = {
+export type Comment = {
     id: string,
-    user: unknown,
-    post: unknown,
-    parentComment: unknown | null,
-    childrenComments: unknown[] | null,
+    user: User,
+    postId: string,
+    parentCommentId: string | null,
     content: string,
-    deleted: boolean,
     createdAt: string,
     updatedAt: string | null,
 }
 
-type Reaction = {
-    id: string,
-    type: string,
-    user: unknown,
-    post: Post,
-    createdAt: string,
-}
-
-type Topic = {
-    id: string,
-    name: string,
-}
-
-type Page = {
+export type Page = {
     id: string,
     name: string,
     description: string,
@@ -41,35 +24,71 @@ type Page = {
     updatedAt: string | null,
 }
 
-type Post = {
+export type Post = {
     id: string,
-    user: unknown,
-    page: unknown,
+    user: User,
+    page: Page,
     title: string,
     description: string | null,
     urlImage: string | null,
     nbLikes: number,
-    nbDislikes: number
+    nbDislikes: number,
     topics: Topic[] | null,
     comments: Comment[] | null,
     createdAt: string,
     updatedAt: string | null,
 }
 
-type User = {
+export type Topic = {
+    id: string,
+    name: string,
+}
+
+export type FollowedPage = {
+    pageId: string,
+    rolePage: string,
+}
+
+export type Reaction = {
+    postId: string,
+    userId: string,
+    type: string,
+}
+
+export type BanHistoryEntry = {
+    reason: string,
+    bannedAt: string,
+    unbannedAt: string | null,
+}
+
+export type FollowedUser = {
     id: string,
     username: string,
-    password: string,
-    roles: string[],
-    email : string,
     imageProfile: string | null,
-    ignoredUsers: unknown[],
-    followedUsers: unknown[],
-    createdAt : string,
-    enabled: boolean,
-    credentialsNonExpired: boolean,
-    accountNonLocked: boolean,
-    banHistory: Ban[] | null,
-    followedPages : Page[] | null,
-    reactions: Reaction[] | null,
+    followedPages: FollowedPage[] | null,
+    followedUsers: string[] | null,
+    topics: Topic[] | null,
+}
+
+export type User = {
+    id: string,
+    username: string,
+    imageProfile: string | null,
+    email?: string,
+    enabled?: boolean,
+    createdAt?: string,
+    ignoredUsers?: string[] | null,
+    followedPages: FollowedPage[] | null,
+    followedUsers: FollowedUser[] | null,
+    reactions?: Reaction[] | null,
+    roles?: string[] | null,
+    banHistory?: BanHistoryEntry[] | null,
+    topics?: Topic[] | null,
+}
+
+export type UpdateUserProfilePayload = {
+    username: string,
+    imageProfile: string | null,
+    email: string | null,
+    topicsIds: string[],
 }

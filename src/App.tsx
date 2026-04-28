@@ -1,63 +1,45 @@
 import { Routes, Route } from "react-router";
 import './App.css'
-import { deactivate } from './hooks/auth';
 import RegisterPage from './pages/RegisterPage'
-import AuthForm from "./components/login/Login";
-import {useState} from "react";
-
 import { useNavigate } from "react-router";
-
-function DEACTIVATE() {
-    const [message, setMessage] = useState<string | null>(null);
-    const navigate = useNavigate();
-
-    const handleDeactivate = async () => {
-        await deactivate();
-        setMessage('Votre compte a été désactivé avec succès');
-        setTimeout(() => navigate('/'), 2000);
-    };
-
-    return (
-        <div>
-            <button onClick={handleDeactivate}>
-                Désactiver mon compte
-            </button>
-            {message && <p>{message}</p>}
-        </div>
-    );
-}
-
-function HOME() {
-    return (
-        <div>
-            <h2>Bienvenue sur Echoo</h2>
-            <p>Ceci est la page d'accueil.</p>
-        </div>
-    );
-}
+import LoginPage from "./pages/LoginPage.tsx";
+import HomePage from "./pages/HomePage.tsx";
+import ProfilePage from "./pages/ProfilePage.tsx";
+import RecommendationsPage from "./pages/RecommendationsPage.tsx";
 
 function ERROR() {
+    const navigate = useNavigate();
+
     return (
-        <div>
-            <h2>404 - Page non trouvée</h2>
-            <p>La page que vous recherchez n'existe pas.</p>
+        <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+            <div className="text-center max-w-md">
+                <div className="mb-8">
+                    <h1 className="text-9xl font-bold text-blue-600 mb-4">404</h1>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-4">Page non trouvée</h2>
+                    <p className="text-gray-600 text-lg mb-8">
+                        Oups ! La page que vous recherchez n'existe pas.
+                    </p>
+                </div>
+
+                <button
+                    onClick={() => navigate("/")}
+                    className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 transition duration-200 mb-4"
+                >
+                    Retour à l'accueil
+                </button>
+            </div>
         </div>
     );
 }
 
-function LOGIN({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
-  return <AuthForm token={token} setToken={setToken} />;
-}
-
-function App() {
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem("authToken"));
+function App({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     return (
         <Routes>
-            <Route path="/" element={<HOME />} />
-            <Route path="/login" element={<LOGIN token={token} setToken={setToken} />} />
+            <Route path="/" element={<HomePage token={token} setToken={setToken} />} />
+            <Route path="/login" element={<LoginPage setToken={setToken} />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/deactivate" element={<DEACTIVATE />} />
-            <Route path="/auth" element={<LOGIN token={token} setToken={setToken} />} />
+            <Route path="/profile" element={<ProfilePage token={token} setToken={setToken} />} />
+            <Route path="/recommendations" element={<RecommendationsPage token={token} setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
     )

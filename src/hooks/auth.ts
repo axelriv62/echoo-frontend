@@ -1,88 +1,94 @@
-import { useState } from 'react';
-import { API_URL } from '../utils/constants';
+import {API_URL, TOKEN_KEY} from '../utils/constants';
 
-type RegisterPayload = {
+// Type to define the shape of the authentication payload for both signin and register functions
+type AuthPayload = {
     username: string;
     password: string;
 };
 
-export const signin = async (username: string, password: string) => {
-    const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-    });
+/**
+ * Authentify a user by sending a POST request to the backend with the provided username and password.
+ * If the authentication is successful, the received token is stored in localStorage for future authenticated requests.
+ * Returns an object indicating the success status and a message to be displayed to the user.
+ * @param username - The username of the user trying to authenticate
+ * @param password - The password of the user trying to authenticate
+ * @returns An object containing a success boolean and a message string
+ */
+export const signin = async ({ username, password }: AuthPayload): Promise<{ success: boolean; message: string, token?: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+        });
 
-    if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem("authToken", data.token);
-    } else {
-        alert("login/password incorrect");
-    }
-}
-
-export function useRegister() {
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-    const register = async ({ username, password }: RegisterPayload) => {
-        setLoading(true);
-        setError(null);
-        setSuccessMessage(null);
-
-        try {
-            const response = await fetch(`${API_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password }),
-            });
-
-            if (!response.ok) {
-                setError("Échec de l'inscription");
-                return false;
-            }
-
-            setSuccessMessage('Inscription réussie');
-            return true;
-        } catch {
-            setError('Erreur de réseau');
-            return false;
-        } finally {
-            setLoading(false);
+        if (!response.ok) {
+            return { success: false, message: "Identifiant ou mot de passe incorrect" };
         }
-    };
 
-    return { register, loading, error, successMessage };
-}
+        const data = await response.json();
+        localStorage.setItem(TOKEN_KEY, data.token);
+
+        return { success: true, message: "Connexion réussie, redirection en cours...", token: data.token };
+    } catch {
+        return { success: false, message: "Erreur de lors de la connexion, veuillez réessayer" };
+    }
+};
 
 /**
- * Deactivate the user's account by sending a request to the backend API.
- * @returns {Promise<Object>} The response from the API after deactivation.
- * @throws {Error} If there is no token found or if the API request fails.
+ * Register a new user by sending a POST request to the backend with the provided username and password.
+ * If the registration is successful, a success message is returned. Otherwise, an error message is returned.
+ * @param username - The desired username for the new user
+ * @param password - The desired password for the new user
+ * @returns An object containing a success boolean and a message string
  */
-export async function deactivate(): Promise<object> {
-    const token = localStorage.getItem('authToken');
+export const register = async ({ username, password }: AuthPayload): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+            return { success: false, message: "Échec de l'inscription, veuillez vérifier vos informations et réessayer" };
+        }
+
+        return { success: true, message: "Inscription réussie, redirection vers la page de connexion..." };
+    } catch {
+        return { success: false, message: "Erreur lors de l'inscription, veuillez réessayer" };
+    }
+};
+
+/**
+ * Deactivate the current user's account by sending a DELETE request to the backend.
+ * If the deactivation is successful, the authentication token is removed from localStorage and a success message is returned.
+ * Otherwise, an error message is returned.
+ * @returns An object containing a success boolean and a message string
+ */
+export const deactivate = async (): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
-        alert('Pas de token trouvé, veuillez vous connecter.');
+        return { success: false, message: "Pas de token trouvé" };
     }
 
-    const response = await fetch(`${API_URL}/users/disable-me`, {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+    try {
+        const response = await fetch(`${API_URL}/users/disable-me`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return { success: false, message: `Erreur: ${response.statusText}` };
         }
-    });
 
-    if (!response.ok) {
-        alert(`Erreur lors de la désactivation du compte: ${response.statusText}`);
+        localStorage.removeItem(TOKEN_KEY);
+        return { success: true, message: "Compte désactivé avec succès" };
+    } catch {
+        return { success: false, message: "Erreur lors de la désactivation du compte, veuillez réessayer" };
     }
-
-    localStorage.removeItem('authToken');
-
-    return await response.json();
-}
+};
