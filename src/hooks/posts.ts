@@ -51,3 +51,80 @@ export const createPost = async (payload: CreatePostPayload): Promise<{ success:
         return { success: false, message: "Erreur lors de la création du post, veuillez réessayer" };
     }
 };
+
+export const createTopic = async (topicName: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+        return { success: false, message: "Vous devez être connecté" };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/topics`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ name: topicName }),
+        });
+        if (!response.ok) {
+            return { success: false, message: "Erreur lors de la création du topic" };
+        }
+
+        return { success: true, message: "Topic crée avec succès !"};
+    } catch {
+        return { success: false, message: "Erreur lors de la création du topic, veuillez réessayer" };
+    }
+}
+
+export const getTopic = async (): Promise<{ success: boolean; topics: string[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+        return { success: false, topics: [] };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/topics`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            return { success: false, topics: [] };
+        }
+
+        const data = await response.json();
+        return { success: true, topics: data.topics || [] };
+    } catch {
+        return { success: false, topics: [] };
+    }
+}
+
+export const deleteTopic = async (topicId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+
+    if (!token) {
+        return { success: false, message: "Vous devez être connecté" };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/topics/${topicId}`, {
+            method: 'DELETE',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            return { success: false, message: "Erreur lors de la suppression du topic" };
+        }
+
+        return { success: true, message: "Topic supprimé avec succès !" };
+    } catch {
+        return { success: false, message: "Erreur lors de la suppression du topic, veuillez réessayer" };
+    }
+}
