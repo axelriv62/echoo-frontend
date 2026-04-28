@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { getPosts, createPost, type CreatePostPayload } from "../hooks/posts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post } from "../utils/types";
+import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
 
 interface PostFormState {
     title: string;
@@ -15,7 +16,7 @@ interface PostFormState {
     success: string | null;
 }
 
-const HomePage = ({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
+const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
@@ -31,17 +32,17 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
         success: null,
     });
 
-    useEffect(() => {
-        loadPosts();
-    }, []);
-
-    const loadPosts = async () => {
+    const refreshPosts = useCallback(async () => {
         const result = await getPosts();
         if (result.success && result.posts) {
             setPosts(result.posts);
         }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        refreshPosts();
+    }, [refreshPosts]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -78,7 +79,7 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
                 success: result.message,
             });
 
-            await loadPosts();
+            await refreshPosts();
 
             setTimeout(() => {
                 setFormData(prev => ({ ...prev, success: null }));
@@ -105,12 +106,12 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
 
     if (!token) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+            <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#a237ff]/10 to-[#a237ff]/5 p-4">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold text-gray-800 mb-8">Veuillez vous connecter</h2>
                     <button
                         onClick={() => navigate("/login")}
-                        className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition duration-200"
+                        className="rounded-lg bg-[#a237ff] hover:bg-[#8a1fb8] text-white font-semibold py-3 px-6 transition duration-200"
                     >
                         Se connecter
                     </button>
@@ -239,6 +240,9 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
                     </div>
                 </form>
             </div>
+
+                  <RecommendedUsers token={token} onFollowSuccess={refreshPosts} />
+
 
             {loading ? (
                 <div className="p-4 text-center text-gray-500">
