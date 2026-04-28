@@ -1,5 +1,5 @@
 import { API_URL, TOKEN_KEY } from '../utils/constants';
-import type {Post} from "../utils/types.ts";
+import type { Post, Topic } from "../utils/types.ts";
 
 export type CreatePostPayload = {
     title: string;
@@ -97,21 +97,22 @@ export const createTopic = async (topicName: string): Promise<{ success: boolean
             },
             body: JSON.stringify({ name: topicName }),
         });
+
         if (!response.ok) {
             return { success: false, message: "Erreur lors de la création du topic" };
         }
 
-        return { success: true, message: "Topic crée avec succès !"};
+        return { success: true, message: "Topic créé avec succès !" };
     } catch {
         return { success: false, message: "Erreur lors de la création du topic, veuillez réessayer" };
     }
-}
+};
 
-export const getTopic = async (): Promise<{ success: boolean; topics: string[] }> => {
+export const getTopic = async (): Promise<{ success: boolean; topics: Topic[]; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
-        return { success: false, topics: [] };
+        return { success: false, topics: [], message: "Vous devez être connecté" };
     }
 
     try {
@@ -123,15 +124,20 @@ export const getTopic = async (): Promise<{ success: boolean; topics: string[] }
         });
 
         if (!response.ok) {
-            return { success: false, topics: [] };
+            return { success: false, topics: [], message: "Erreur lors de la récupération des topics" };
         }
 
         const data = await response.json();
-        return { success: true, topics: data.topics || [] };
+
+        return {
+            success: true,
+            topics: Array.isArray(data) ? data : [],
+            message: "Topics récupérés avec succès"
+        };
     } catch {
-        return { success: false, topics: [] };
+        return { success: false, topics: [], message: "Erreur lors de la récupération des topics, veuillez réessayer" };
     }
-}
+};
 
 export const deleteTopic = async (topicId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
@@ -156,4 +162,4 @@ export const deleteTopic = async (topicId: string): Promise<{ success: boolean; 
     } catch {
         return { success: false, message: "Erreur lors de la suppression du topic, veuillez réessayer" };
     }
-}
+};

@@ -8,3 +8,5 @@ export const API_URL = 'http://localhost:8080/api'
 
 // Key used to store the authentication token in localStorage
 export const TOKEN_KEY = 'authToken'
+
+export const ROLES_KEY = 'userRoles'

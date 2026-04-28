@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
-import { getPosts, createPost, type CreatePostPayload } from "../hooks/posts";
+import { getPosts, getTopic, createPost, type CreatePostPayload } from "../hooks/posts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
-import type { Post } from "../utils/types";
+import type { Post, Topic } from "../utils/types";
 import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
+import TopicsModal from "../components/topics-modal/TopicsModal";
 
 interface PostFormState {
     title: string;
@@ -19,7 +20,9 @@ interface PostFormState {
 const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
     const [posts, setPosts] = useState<Post[]>([]);
+    const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showTopicsModal, setShowTopicsModal] = useState(false);
     useProfile(token);
 
     const [formData, setFormData] = useState<PostFormState>({
@@ -42,7 +45,17 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
 
     useEffect(() => {
         refreshPosts();
+        loadTopics();
     }, [refreshPosts]);
+
+    const loadTopics = async () => {
+        const result = await getTopic();
+        if (result.success) {
+            setTopics(result.topics);
+        }
+    };
+
+    const topicNameById = new Map(topics.map((t) => [t.id, t.name]));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -181,39 +194,31 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                                     disabled={formData.isLoading}
                                 />
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
                                 </svg>
                             </label>
 
                             <button
                                 type="button"
                                 className="text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition"
-                                onClick={() => {
-                                    const topic = prompt('Ajouter un sujet:');
-                                    if (topic && topic.trim()) {
-                                        setFormData(prev => ({
-                                            ...prev,
-                                            topicsIds: [...prev.topicsIds, topic.trim()]
-                                        }));
-                                    }
-                                }}
+                                onClick={() => setShowTopicsModal(true)}
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"/>
+                                    <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z" />
                                 </svg>
                             </button>
                         </div>
 
                         {formData.topicsIds.length > 0 && (
                             <div className="flex flex-wrap gap-2 flex-1 mx-4">
-                                {formData.topicsIds.map((topic, idx) => (
-                                    <span key={idx} className="badge-primary">
-                                        {topic}
+                                {formData.topicsIds.map((topicId) => (
+                                    <span key={topicId} className="badge-primary">
+                                        {topicNameById.get(topicId) ?? topicId}
                                         <button
                                             type="button"
                                             onClick={() => setFormData(prev => ({
                                                 ...prev,
-                                                topicsIds: prev.topicsIds.filter((_, i) => i !== idx)
+                                                topicsIds: prev.topicsIds.filter(id => id !== topicId)
                                             }))}
                                             className="cursor-pointer hover:text-[#8a1fb8]"
                                         >
@@ -230,9 +235,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                             className="btn-primary flex items-center gap-2"
                         >
                             {formData.isLoading ? (
-                                <>
-                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                </>
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                             ) : (
                                 'Poster'
                             )}
@@ -259,6 +262,14 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                     ))}
                 </div>
             )}
+
+            <TopicsModal
+                isOpen={showTopicsModal}
+                onClose={() => setShowTopicsModal(false)}
+                selectedTopicIds={formData.topicsIds}
+                onTopicsChange={(topicIds) => setFormData(prev => ({ ...prev, topicsIds: topicIds }))}
+                onTopicsUpdated={loadTopics}
+            />
         </div>
     );
 };
