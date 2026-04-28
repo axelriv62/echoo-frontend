@@ -3,7 +3,7 @@
  * These types define the structure of the data returned by the backend API and used throughout the frontend application.
  */
 
-type Comment = {
+export type Comment = {
     id: string,
     user: User,
     postId: string,
@@ -13,7 +13,7 @@ type Comment = {
     updatedAt: string | null,
 }
 
-type Page = {
+export type Page = {
     id: string,
     name: string,
     description: string,
@@ -24,7 +24,7 @@ type Page = {
     updatedAt: string | null,
 }
 
-type Post = {
+export type Post = {
     id: string,
     user: User,
     page: Page,
@@ -32,22 +32,57 @@ type Post = {
     description: string | null,
     urlImage: string | null,
     nbLikes: number,
-    nbDislikes: number
+    nbDislikes: number,
     topics: Topic[] | null,
     comments: Comment[] | null,
     createdAt: string,
     updatedAt: string | null,
 }
 
-type Topic = {
+export type Topic = {
     id: string,
     name: string,
 }
 
-type User = {
+export type FollowedPage = {
+    pageId: string,
+    rolePage: string,
+}
+
+export type Reaction = {
+    postId: string,
+    userId: string,
+    type: string,
+}
+
+export type BanHistoryEntry = {
+    reason: string,
+    bannedAt: string,
+    unbannedAt: string | null,
+}
+
+export type FollowedUser = {
     id: string,
     username: string,
     imageProfile: string | null,
-    followedPages: { pageId: string, rolePage: string }[] | null,
-    followedUsers: unknown[] | null, // TODO: la doc swagger est pas claire là-dessus, à tester avec bruno
+    followedPages: FollowedPage[] | null,
+    followedUsers: string[] | null,
+    topics: Topic[] | null,
 }
+
+export type User = {
+    id: string,
+    username: string,
+    imageProfile: string | null,
+    email?: string,
+    enabled?: boolean,
+    createdAt?: string,
+    ignoredUsers?: string[] | null,
+    followedPages: FollowedPage[] | null,
+    followedUsers: FollowedUser[] | null,
+    reactions?: Reaction[] | null,
+    roles?: string[] | null,
+    banHistory?: BanHistoryEntry[] | null,
+    topics?: Topic[] | null,
+}
+
