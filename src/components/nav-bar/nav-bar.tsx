@@ -5,7 +5,7 @@ import { TOKEN_KEY } from "../../utils/constants";
 import { useProfile } from "../../hooks/useProfile";
 import { deactivate } from "../../hooks/auth";
 import logo from "../../assets/logo.png";
-
+import SearchBar from "../SearchBar/SearchBar";
 interface NavItem {
     name: string;
     path: string;
@@ -59,6 +59,10 @@ const NavBar: React.FC<NavBarProps> = ({ token, setToken }) => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginRight: 'auto' }}>
                     <img src={logo} alt="echoo logo" style={{ height: 40, width: 'auto' }} />
                     <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>Echoo</span>
+                </Box>
+
+                <Box sx={{ display: 'flex', gap: 2, marginRight: 2 }}>
+                    <SearchBar />
                 </Box>
 
                 <Box sx={{ display: 'flex', gap: 2 }}>
