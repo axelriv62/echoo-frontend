@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { getPosts, createPost, type CreatePostPayload } from "../hooks/posts";
-import { deactivate } from "../hooks/auth";
 import PostCard from "../components/post-card/PostCard";
-import { TOKEN_KEY } from "../utils/constants";
 import { useProfile } from "../hooks/useProfile";
 import type { Post } from "../utils/types";
 
@@ -21,7 +19,7 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
     const navigate = useNavigate();
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
-    const { profile, loading: profileLoading } = useProfile(token);
+    useProfile(token);
 
     const [formData, setFormData] = useState<PostFormState>({
         title: '',
@@ -105,20 +103,6 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
-        navigate('/login');
-    };
-
-    const handleDeactivate = async () => {
-        const result = await deactivate();
-        if (result.success) {
-            setToken(null);
-            navigate('/login');
-        }
-    };
-
     if (!token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
@@ -136,169 +120,141 @@ const HomePage = ({ token, setToken }: { token: string | null; setToken: (token:
     }
 
     return (
-        <div className="min-h-screen bg-white">
-            <div className="sticky top-0 z-50 bg-white border-b border-gray-200 backdrop-blur">
-                <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-blue-600">Echoo</h1>
-                    <div className="flex gap-3 items-center">
-                        <button
-                            onClick={() => navigate("/profile")}
-                            className="px-4 py-2 bg-white text-blue-600 border border-blue-200 text-sm font-semibold rounded-full hover:bg-blue-50 transition duration-200"
-                        >
-                            {profileLoading ? "Chargement..." : profile?.username ?? "Mon profil"}
-                        </button>
-                        <button
-                            onClick={handleLogout}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-full transition duration-200"
-                        >
-                            Déconnexion
-                        </button>
-                        <button
-                            onClick={handleDeactivate}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-full transition duration-200"
-                        >
-                            Désactiver
-                        </button>
-                    </div>
-                </div>
-            </div>
+        <div className="max-w-2xl mx-auto border-l border-r border-[#e5e7eb] min-h-screen">
+            <div className="border-b border-[#e5e7eb] p-4">
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <input
+                        type="text"
+                        placeholder="Titre du post"
+                        value={formData.title}
+                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                        className="w-full text-lg font-semibold bg-transparent placeholder-gray-400 text-[#000000] outline-none border-b border-[#e5e7eb] pb-2"
+                        disabled={formData.isLoading}
+                    />
 
-            <div className="max-w-2xl mx-auto border-l border-r border-gray-200 min-h-screen">
-                <div className="border-b border-gray-200 p-4">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <input
-                            type="text"
-                            placeholder="Titre du post"
-                            value={formData.title}
-                            onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                            className="w-full text-lg font-semibold bg-transparent placeholder-gray-400 text-gray-900 outline-none border-b border-gray-200 pb-2"
-                            disabled={formData.isLoading}
-                        />
+                    <textarea
+                        placeholder="Quoi de neuf?!"
+                        value={formData.description}
+                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                        className="w-full text-xl bg-transparent placeholder-gray-500 text-[#000000] outline-none resize-none"
+                        rows={4}
+                        disabled={formData.isLoading}
+                    />
 
-                        <textarea
-                            placeholder="Quoi de neuf?!"
-                            value={formData.description}
-                            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                            className="w-full text-xl bg-transparent placeholder-gray-500 text-gray-900 outline-none resize-none"
-                            rows={4}
-                            disabled={formData.isLoading}
-                        />
+                    {formData.error && (
+                        <div className="bg-[#ef4444]/10 border border-[#ef4444] text-[#ef4444] px-3 py-2 rounded text-sm">
+                            {formData.error}
+                        </div>
+                    )}
+                    {formData.success && (
+                        <div className="bg-[#10b981]/10 border border-[#10b981] text-[#10b981] px-3 py-2 rounded text-sm">
+                            {formData.success}
+                        </div>
+                    )}
 
-                        {formData.error && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded text-sm">
-                                {formData.error}
-                            </div>
-                        )}
-                        {formData.success && (
-                            <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded text-sm">
-                                {formData.success}
-                            </div>
-                        )}
-
-                        {formData.urlImage && (
-                            <div className="relative rounded-2xl overflow-hidden border border-gray-200 bg-gray-100">
-                                <img
-                                    src={formData.urlImage}
-                                    alt="Aperçu"
-                                    className="w-full h-64 object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setFormData(prev => ({ ...prev, urlImage: '' }))}
-                                    className="absolute top-2 left-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-                            <div className="flex gap-2">
-                                <label className="cursor-pointer text-blue-600 hover:bg-blue-50 p-2 rounded-full transition">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        className="hidden"
-                                        disabled={formData.isLoading}
-                                    />
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                                    </svg>
-                                </label>
-
-                                <button
-                                    type="button"
-                                    className="text-blue-600 hover:bg-blue-50 p-2 rounded-full transition"
-                                    onClick={() => {
-                                        const topic = prompt('Ajouter un sujet:');
-                                        if (topic && topic.trim()) {
-                                            setFormData(prev => ({
-                                                ...prev,
-                                                topicsIds: [...prev.topicsIds, topic.trim()]
-                                            }));
-                                        }
-                                    }}
-                                >
-                                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                        <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"/>
-                                    </svg>
-                                </button>
-                            </div>
-
-                            {formData.topicsIds.length > 0 && (
-                                <div className="flex flex-wrap gap-2 flex-1 mx-4">
-                                    {formData.topicsIds.map((topic, idx) => (
-                                        <span key={idx} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                                            {topic}
-                                            <button
-                                                type="button"
-                                                onClick={() => setFormData(prev => ({
-                                                    ...prev,
-                                                    topicsIds: prev.topicsIds.filter((_, i) => i !== idx)
-                                                }))}
-                                                className="cursor-pointer hover:text-blue-900"
-                                            >
-                                                ✕
-                                            </button>
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-
+                    {formData.urlImage && (
+                        <div className="relative rounded-2xl overflow-hidden border border-[#e5e7eb] bg-gray-100">
+                            <img
+                                src={formData.urlImage}
+                                alt="Aperçu"
+                                className="w-full h-64 object-cover"
+                            />
                             <button
-                                type="submit"
-                                disabled={formData.isLoading || !formData.title.trim() || !formData.description.trim()}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold rounded-full transition duration-200 flex items-center gap-2"
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, urlImage: '' }))}
+                                className="absolute top-2 left-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
                             >
-                                {formData.isLoading ? (
-                                    <>
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    </>
-                                ) : (
-                                    'Poster'
-                                )}
+                                ✕
                             </button>
                         </div>
-                    </form>
-                </div>
+                    )}
 
-                {loading ? (
-                    <div className="p-4 text-center text-gray-500">
-                        <p className="py-8">Chargement des posts...</p>
+                    <div className="flex justify-between items-center pt-4 border-t border-[#e5e7eb]">
+                        <div className="flex gap-2">
+                            <label className="cursor-pointer text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    className="hidden"
+                                    disabled={formData.isLoading}
+                                />
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+                                </svg>
+                            </label>
+
+                            <button
+                                type="button"
+                                className="text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition"
+                                onClick={() => {
+                                    const topic = prompt('Ajouter un sujet:');
+                                    if (topic && topic.trim()) {
+                                        setFormData(prev => ({
+                                            ...prev,
+                                            topicsIds: [...prev.topicsIds, topic.trim()]
+                                        }));
+                                    }
+                                }}
+                            >
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z"/>
+                                </svg>
+                            </button>
+                        </div>
+
+                        {formData.topicsIds.length > 0 && (
+                            <div className="flex flex-wrap gap-2 flex-1 mx-4">
+                                {formData.topicsIds.map((topic, idx) => (
+                                    <span key={idx} className="badge-primary">
+                                        {topic}
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({
+                                                ...prev,
+                                                topicsIds: prev.topicsIds.filter((_, i) => i !== idx)
+                                            }))}
+                                            className="cursor-pointer hover:text-[#8a1fb8]"
+                                        >
+                                            ✕
+                                        </button>
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={formData.isLoading || !formData.title.trim() || !formData.description.trim()}
+                            className="btn-primary flex items-center gap-2"
+                        >
+                            {formData.isLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                </>
+                            ) : (
+                                'Poster'
+                            )}
+                        </button>
                     </div>
-                ) : posts.length === 0 ? (
-                    <div className="p-4 text-center text-gray-500">
-                        <p className="py-8">Les posts apparaîtront ici</p>
-                    </div>
-                ) : (
-                    <div className="divide-y divide-gray-200">
-                        {posts.map((post) => (
-                            <PostCard key={post.id} post={post} />
-                        ))}
-                    </div>
-                )}
+                </form>
             </div>
+
+            {loading ? (
+                <div className="p-4 text-center text-gray-500">
+                    <p className="py-8">Chargement des posts...</p>
+                </div>
+            ) : posts.length === 0 ? (
+                <div className="p-4 text-center text-gray-500">
+                    <p className="py-8">Les posts apparaîtront ici</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-[#e5e7eb]">
+                    {posts.map((post) => (
+                        <PostCard key={post.id} post={post} />
+                    ))}
+                </div>
+            )}
         </div>
     );
 };

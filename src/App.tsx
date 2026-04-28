@@ -1,10 +1,8 @@
 import { Routes, Route } from "react-router";
 import './App.css'
 import RegisterPage from './pages/RegisterPage'
-import {useState} from "react";
 import { useNavigate } from "react-router";
 import LoginPage from "./pages/LoginPage.tsx";
-import {TOKEN_KEY} from "./utils/constants.ts";
 import HomePage from "./pages/HomePage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import RecommendationsPage from "./pages/RecommendationsPage.tsx";
@@ -34,9 +32,7 @@ function ERROR() {
     );
 }
 
-function App() {
-    const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-
+function App({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     return (
         <Routes>
             <Route path="/" element={<HomePage token={token} setToken={setToken} />} />
