@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage.tsx";
 import {TOKEN_KEY} from "./utils/constants.ts";
 import HomePage from "./pages/HomePage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
+import RecommendationsPage from "./pages/RecommendationsPage.tsx";
 
 function ERROR() {
     const navigate = useNavigate();
@@ -42,6 +43,7 @@ function App() {
             <Route path="/login" element={<LoginPage setToken={setToken} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage token={token} setToken={setToken} />} />
+            <Route path="/recommendations" element={<RecommendationsPage token={token} setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
     )
