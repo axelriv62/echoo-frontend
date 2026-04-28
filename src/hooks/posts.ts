@@ -1,4 +1,5 @@
 import { API_URL, TOKEN_KEY } from '../utils/constants';
+import type {Post} from "../utils/types.ts";
 
 export type CreatePostPayload = {
     title: string;

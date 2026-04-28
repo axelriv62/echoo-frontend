@@ -1,7 +1,11 @@
-import { useState } from 'react';
-import { createPost, type CreatePostPayload } from '../hooks/posts';
-import { useNavigate } from 'react-router';
-import { TOKEN_KEY } from '../utils/constants';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
+import { getPosts, createPost, type CreatePostPayload } from "../hooks/posts";
+import { deactivate } from "../hooks/auth";
+import PostCard from "../components/post-card/PostCard";
+import { TOKEN_KEY } from "../utils/constants";
+import { useProfile } from "../hooks/useProfile";
+import type { Post } from "../utils/types";
 
 interface PostFormState {
     title: string;
@@ -13,9 +17,11 @@ interface PostFormState {
     success: string | null;
 }
 
-export default function HomePage({ setToken }: { setToken: (token: string | null) => void }) {
+const HomePage = ({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
-    const token = localStorage.getItem(TOKEN_KEY);
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { profile, loading: profileLoading } = useProfile(token);
 
     const [formData, setFormData] = useState<PostFormState>({
         title: '',
@@ -27,27 +33,16 @@ export default function HomePage({ setToken }: { setToken: (token: string | null
         success: null,
     });
 
-    if (!token) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-                <div className="text-center">
-                    <h2 className="text-3xl font-bold text-gray-800 mb-4">Accès refusé</h2>
-                    <p className="text-gray-600 mb-6">Vous devez être connecté pour accéder à cette page</p>
-                    <button
-                        onClick={() => navigate('/login')}
-                        className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 transition duration-200"
-                    >
-                        Se connecter
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    useEffect(() => {
+        loadPosts();
+    }, []);
 
-    const handleLogout = () => {
-        localStorage.removeItem(TOKEN_KEY);
-        setToken(null);
-        navigate('/');
+    const loadPosts = async () => {
+        const result = await getPosts();
+        if (result.success && result.posts) {
+            setPosts(result.posts);
+        }
+        setLoading(false);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -68,8 +63,8 @@ export default function HomePage({ setToken }: { setToken: (token: string | null
         const payload: CreatePostPayload = {
             title: formData.title,
             description: formData.description,
-            urlImage: formData.urlImage || '',
-            topicsIds: formData.topicsIds.length > 0 ? formData.topicsIds : [],
+            urlImage: formData.urlImage || undefined,
+            topicsIds: formData.topicsIds.length > 0 ? formData.topicsIds : undefined,
         };
 
         const result = await createPost(payload);
@@ -84,6 +79,8 @@ export default function HomePage({ setToken }: { setToken: (token: string | null
                 error: null,
                 success: result.message,
             });
+
+            await loadPosts();
 
             setTimeout(() => {
                 setFormData(prev => ({ ...prev, success: null }));
@@ -108,17 +105,61 @@ export default function HomePage({ setToken }: { setToken: (token: string | null
         }
     };
 
+    const handleLogout = () => {
+        localStorage.removeItem(TOKEN_KEY);
+        setToken(null);
+        navigate('/login');
+    };
+
+    const handleDeactivate = async () => {
+        const result = await deactivate();
+        if (result.success) {
+            setToken(null);
+            navigate('/login');
+        }
+    };
+
+    if (!token) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-8">Veuillez vous connecter</h2>
+                    <button
+                        onClick={() => navigate("/login")}
+                        className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition duration-200"
+                    >
+                        Se connecter
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-white">
             <div className="sticky top-0 z-50 bg-white border-b border-gray-200 backdrop-blur">
                 <div className="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
                     <h1 className="text-2xl font-bold text-blue-600">Echoo</h1>
-                    <button
-                        onClick={handleLogout}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-full transition duration-200"
-                    >
-                        Déconnexion
-                    </button>
+                    <div className="flex gap-3 items-center">
+                        <button
+                            onClick={() => navigate("/profile")}
+                            className="px-4 py-2 bg-white text-blue-600 border border-blue-200 text-sm font-semibold rounded-full hover:bg-blue-50 transition duration-200"
+                        >
+                            {profileLoading ? "Chargement..." : profile?.username ?? "Mon profil"}
+                        </button>
+                        <button
+                            onClick={handleLogout}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-full transition duration-200"
+                        >
+                            Déconnexion
+                        </button>
+                        <button
+                            onClick={handleDeactivate}
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-full transition duration-200"
+                        >
+                            Désactiver
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -242,10 +283,24 @@ export default function HomePage({ setToken }: { setToken: (token: string | null
                     </form>
                 </div>
 
-                <div className="p-4 text-center text-gray-500">
-                    <p className="py-8">Les posts apparaîtront ici</p>
-                </div>
+                {loading ? (
+                    <div className="p-4 text-center text-gray-500">
+                        <p className="py-8">Chargement des posts...</p>
+                    </div>
+                ) : posts.length === 0 ? (
+                    <div className="p-4 text-center text-gray-500">
+                        <p className="py-8">Les posts apparaîtront ici</p>
+                    </div>
+                ) : (
+                    <div className="divide-y divide-gray-200">
+                        {posts.map((post) => (
+                            <PostCard key={post.id} post={post} />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
-}
+};
+
+export default HomePage;
