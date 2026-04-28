@@ -6,6 +6,7 @@ import {useState} from "react";
 import { useNavigate } from "react-router";
 import LoginPage from "./pages/LoginPage.tsx";
 import {TOKEN_KEY} from "./utils/constants.ts";
+import RecommendedUsers from "./components/suggested_user/RecommendedUsers.tsx";
 
 function HOME({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     const navigate = useNavigate();
@@ -65,6 +66,8 @@ function HOME({ token, setToken }: { token: string | null; setToken: (token: str
                         </button>
                     )}
                 </div>
+
+                {token && <RecommendedUsers />}
             </div>
         </div>
     );
