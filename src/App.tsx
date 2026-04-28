@@ -6,6 +6,7 @@ import {useState} from "react";
 import { useNavigate } from "react-router";
 import LoginPage from "./pages/LoginPage.tsx";
 import {TOKEN_KEY} from "./utils/constants.ts";
+import RecommendedUsers from "./components/suggested_user/RecommendedUsers.tsx";
 import { useProfile } from "./hooks/useProfile";
 import ProfileCard from "./components/ProfileCard/ProfileCard";
 import HomePage from "./pages/HomePage.tsx";
@@ -66,6 +67,18 @@ function HOME({ token, setToken }: { token: string | null; setToken: (token: str
                             >
                                 Désactiver mon compte
                             </button>
+                        </>
+                    ) : (
+                        <button
+                            onClick={() => navigate("/login")}
+                            className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition duration-200"
+                        >
+                            Se connecter
+                        </button>
+                    )}
+                </div>
+
+                {token && <RecommendedUsers />}
                         </div>
                         {isProfileOpen && (
                             <ProfileCard
