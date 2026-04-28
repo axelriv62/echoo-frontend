@@ -1,4 +1,5 @@
-import {API_URL, TOKEN_KEY} from '../utils/constants';
+import {API_URL, TOKEN_KEY, ROLES_KEY} from '../utils/constants';
+import { getUserProfile } from '../services/api';
 
 // Type to define the shape of the authentication payload for both signin and register functions
 type AuthPayload = {
@@ -28,6 +29,14 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
 
         const data = await response.json();
         localStorage.setItem(TOKEN_KEY, data.token);
+
+        try {
+            const me = await getUserProfile(data.token);
+            const roles = me.roles ?? [];
+            localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
+        } catch (err) {
+            localStorage.setItem(ROLES_KEY, JSON.stringify([]));
+        }
 
         return { success: true, message: "Connexion réussie, redirection en cours...", token: data.token };
     } catch {
@@ -87,6 +96,7 @@ export const deactivate = async (): Promise<{ success: boolean; message: string 
         }
 
         localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem(ROLES_KEY); // <-- suppression des roles aussi
         return { success: true, message: "Compte désactivé avec succès" };
     } catch {
         return { success: false, message: "Erreur lors de la désactivation du compte, veuillez réessayer" };
