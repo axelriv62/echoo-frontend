@@ -7,10 +7,15 @@ import { useNavigate } from "react-router";
 import LoginPage from "./pages/LoginPage.tsx";
 import {TOKEN_KEY} from "./utils/constants.ts";
 import RecommendedUsers from "./components/suggested_user/RecommendedUsers.tsx";
+import { useProfile } from "./hooks/useProfile";
+import ProfileCard from "./components/ProfileCard/ProfileCard";
+import HomePage from "./pages/HomePage.tsx";
 
 function HOME({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     const navigate = useNavigate();
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const { profile, loading: profileLoading, error: profileError } = useProfile(token);
 
     const handleLogout = () => {
         localStorage.removeItem(TOKEN_KEY);
@@ -41,9 +46,15 @@ function HOME({ token, setToken }: { token: string | null; setToken: (token: str
                     </div>
                 )}
                 <h2 className="text-4xl font-bold text-gray-800 mb-8">Bienvenue sur Echoo</h2>
-                <div className="flex gap-4 justify-center">
-                    {token ? (
-                        <>
+                {token ? (
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="flex gap-4 justify-center flex-wrap">
+                            <button
+                                onClick={() => setIsProfileOpen((prev) => !prev)}
+                                className="rounded-lg bg-white text-blue-700 border border-blue-200 font-semibold py-3 px-6 transition duration-200 hover:bg-blue-50"
+                            >
+                                {profileLoading ? "Chargement..." : profile?.username ?? "Mon profil"}
+                            </button>
                             <button
                                 onClick={handleLogout}
                                 className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition duration-200"
@@ -68,6 +79,23 @@ function HOME({ token, setToken }: { token: string | null; setToken: (token: str
                 </div>
 
                 {token && <RecommendedUsers />}
+                        </div>
+                        {isProfileOpen && (
+                            <ProfileCard
+                                profile={profile}
+                                loading={profileLoading}
+                                error={profileError}
+                            />
+                        )}
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => navigate("/login")}
+                        className="rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 transition duration-200"
+                    >
+                        Se connecter
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -106,6 +134,7 @@ function App() {
             <Route path="/" element={<HOME token={token} setToken={setToken} />} />
             <Route path="/login" element={<LoginPage setToken={setToken} />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/home" element={<HomePage setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
         </Routes>
     )
