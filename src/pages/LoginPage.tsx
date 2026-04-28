@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { signin } from "../hooks/auth";
 
 /**
@@ -12,6 +12,18 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const stateMessage = (location.state as { message?: string } | null)?.message;
+        if (!stateMessage) {
+            return;
+        }
+
+        Promise.resolve().then(() => {
+            setMessage({ type: 'success', text: stateMessage });
+        });
+    }, [location.state]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,16 +47,16 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
     };
 
     return (
-        <section className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 p-4">
+        <section className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#a237ff]/5 to-[#000000]/5 p-4">
             <div className="w-full max-w-md">
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-                    <div className="bg-linear-to-r from-blue-600 to-indigo-600 px-8 py-6">
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-[#e5e7eb]">
+                    <div className="bg-gradient-to-r from-[#a237ff] to-[#8a1fb8] px-8 py-8">
                         <h1 className="text-3xl font-bold text-white text-center">Se connecter</h1>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
                         <div>
-                            <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="username" className="block text-sm font-semibold text-[#000000] mb-2">
                                 Nom d'utilisateur
                             </label>
                             <input
@@ -53,13 +65,13 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 disabled={loading}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100"
+                                className="input-field"
                                 placeholder="robert.duchmol"
                             />
                         </div>
 
                         <div>
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label htmlFor="password" className="block text-sm font-semibold text-[#000000] mb-2">
                                 Mot de passe
                             </label>
                             <input
@@ -68,7 +80,7 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 disabled={loading}
-                                className="w-full rounded-lg border border-gray-300 px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition disabled:bg-gray-100"
+                                className="input-field"
                                 placeholder="••••••••"
                             />
                         </div>
@@ -76,8 +88,8 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
                         {message && (
                             <div className={`px-4 py-3 rounded-lg text-sm font-medium ${
                                 message.type === 'success'
-                                    ? 'bg-green-50 border border-green-200 text-green-700'
-                                    : 'bg-red-50 border border-red-200 text-red-700'
+                                    ? 'bg-[#10b981]/10 border border-[#10b981] text-[#10b981]'
+                                    : 'bg-[#ef4444]/10 border border-[#ef4444] text-[#ef4444]'
                             }`}>
                                 {message.text}
                             </div>
@@ -86,16 +98,16 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                            className="btn-primary w-full"
                         >
                             {loading ? "Connexion en cours..." : "Se connecter"}
                         </button>
                     </form>
 
-                    <div className="px-8 py-6 bg-gray-50 border-t border-gray-200">
-                        <p className="text-center text-gray-600">
+                    <div className="px-8 py-6 bg-[#fafafa] border-t border-[#e5e7eb]">
+                        <p className="text-center text-[#000000]">
                             Pas encore inscrit ?{" "}
-                            <a href="/register" className="font-semibold text-blue-600 hover:text-blue-700 transition">
+                            <a href="/register" className="font-semibold text-[#a237ff] hover:text-[#8a1fb8] transition">
                                 S'inscrire
                             </a>
                         </p>
