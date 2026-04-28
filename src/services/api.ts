@@ -193,3 +193,38 @@ export const updateUserProfile = async (
         throw new Error("Erreur lors de la mise a jour du profil", { cause: error });
     }
 };
+
+export const searchUsers = async (
+    query: string,
+    token: string | null = null
+): Promise<{ success: boolean; message: string; users: Array<{ id: string; username: string; imageProfile: string | null }> }> => {
+    if (!query.trim()) {
+        return { success: true, message: "Requête vide", users: [] };
+    }
+
+    try {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_URL}/users/search?query=${encodeURIComponent(query)}`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, users: [] };
+        }
+
+        const data = await response.json();
+        const users = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+
+        return { success: true, message: "Utilisateurs trouvés", users };
+    } catch {
+        return { success: false, message: "Erreur lors de la recherche", users: [] };
+    }
+};
