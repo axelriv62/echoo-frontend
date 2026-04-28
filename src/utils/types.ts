@@ -86,3 +86,9 @@ export type User = {
     topics?: Topic[] | null,
 }
 
+export type UpdateUserProfilePayload = {
+    username: string,
+    imageProfile: string | null,
+    email: string | null,
+    topicsIds: string[],
+}

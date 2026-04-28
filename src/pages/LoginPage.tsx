@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { signin } from "../hooks/auth";
 
 /**
@@ -12,6 +12,18 @@ const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) =
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        const stateMessage = (location.state as { message?: string } | null)?.message;
+        if (!stateMessage) {
+            return;
+        }
+
+        Promise.resolve().then(() => {
+            setMessage({ type: 'success', text: stateMessage });
+        });
+    }, [location.state]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
