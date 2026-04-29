@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import {useState, useEffect, useCallback, useRef} from "react";
 import { useLocation, useNavigate } from "react-router";
 import { getPosts, getTopic, createPost, type CreatePostPayload } from "../hooks/posts";
+import { getUserProfile } from "../services/api";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post, Topic } from "../utils/types";
@@ -26,6 +27,8 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     const [showTopicsModal, setShowTopicsModal] = useState(false);
     const highlightPostId = (location.state as { highlightPostId?: string } | null)?.highlightPostId ?? null;
     useProfile(token);
+    const { profile: myProfile } = useProfile(token);
+    const [ignoredUsersSet, setIgnoredUsersSet] = useState<Set<string>>(new Set(myProfile?.ignoredUsers ?? []));
 
     const [formData, setFormData] = useState<PostFormState>({
         title: '',
@@ -40,14 +43,16 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     const refreshPosts = useCallback(async () => {
         const result = await getPosts();
         if (result.success && result.posts) {
-            setPosts(result.posts);
+            const filtered = result.posts.filter((p) => !ignoredUsersSet.has(p.user.id));
+            setPosts(filtered);
         }
         setLoading(false);
-    }, []);
+    }, [ignoredUsersSet]);
 
+    // keep a ref to the latest refreshPosts so effects can call it without listing it as dependency
+    const refreshPostsRef = useRef(refreshPosts);
     useEffect(() => {
-        refreshPosts();
-        loadTopics();
+        refreshPostsRef.current = refreshPosts;
     }, [refreshPosts]);
 
     useEffect(() => {
@@ -67,6 +72,64 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             setTopics(result.topics);
         }
     };
+
+    useEffect(() => {
+        let isMounted = true;
+
+        // keep local ignored set in sync with profile (defer to avoid sync setState in effect)
+        Promise.resolve().then(() => {
+            if (isMounted) setIgnoredUsersSet(new Set(myProfile?.ignoredUsers ?? []));
+        });
+
+        const onIgnoredUsersChanged = async () => {
+            if (!token) return;
+            try {
+                const me = await getUserProfile(token);
+                setIgnoredUsersSet(new Set(me.ignoredUsers ?? []));
+                if (refreshPostsRef.current) await refreshPostsRef.current();
+            } catch {
+                // ignore
+            }
+        };
+
+        window.addEventListener('ignoredUsersChanged', onIgnoredUsersChanged);
+
+        (async () => {
+            if (!token) {
+                if (isMounted) {
+                    setPosts([]);
+                    setLoading(false);
+                }
+                return;
+            }
+
+            setLoading(true);
+
+            try {
+                const postsResult = await getPosts();
+                if (isMounted && postsResult.success && postsResult.posts) {
+                    const ignoredSet = new Set(myProfile?.ignoredUsers ?? []);
+                    const filtered = postsResult.posts.filter((p) => !ignoredSet.has(p.user.id));
+                    setPosts(filtered);
+                }
+
+                // load topics as well
+                const topicsResult = await getTopic();
+                if (isMounted && topicsResult.success) {
+                    setTopics(topicsResult.topics);
+                }
+            } catch {
+                // ignore
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        })();
+
+        return () => {
+            isMounted = false;
+            window.removeEventListener('ignoredUsersChanged', onIgnoredUsersChanged);
+        };
+    }, [token, myProfile?.ignoredUsers]);
 
     const topicNameById = new Map(topics.map((t) => [t.id, t.name]));
 

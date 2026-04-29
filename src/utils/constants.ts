@@ -10,3 +10,5 @@ export const API_URL = 'http://localhost:8080/api'
 export const TOKEN_KEY = 'authToken'
 
 export const ROLES_KEY = 'userRoles'
+
+export const ID_KEY = 'userId'
