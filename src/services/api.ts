@@ -1,5 +1,5 @@
 import { API_URL } from "../utils/constants";
-import type { UpdateUserProfilePayload, User } from "../utils/types";
+import type { Post, UpdateUserProfilePayload, User } from "../utils/types";
 
 export const getUserProfile = async (token: string): Promise<User> => {
     try {
@@ -84,6 +84,38 @@ export const followUser = async (
         return { success: false, message: `Erreur: ${response.status} ${details}` };
     } catch {
         return { success: false, message: "Impossible de suivre cet utilisateur pour le moment" };
+    }
+};
+
+export const toggleIgnoreUser = async (
+    userId: string,
+    token: string
+): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/users/ignore-user/${userId}`, {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Action ignore mise à jour" };
+    } catch {
+        return { success: false, message: "Impossible de mettre à jour l'ignore pour le moment" };
     }
 };
 
@@ -226,5 +258,149 @@ export const searchUsers = async (
         return { success: true, message: "Utilisateurs trouvés", users };
     } catch {
         return { success: false, message: "Erreur lors de la recherche", users: [] };
+    }
+};
+
+export const searchPosts = async (
+    query: string,
+    token: string | null = null
+): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    if (!query.trim()) {
+        return { success: true, message: "Requête vide", posts: [] };
+    }
+
+    try {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_URL}/posts/search?query=${encodeURIComponent(query)}`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
+        }
+
+        const data = await response.json();
+        const posts = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.content)
+                ? data.content
+                : Array.isArray(data?.posts)
+                    ? data.posts
+                    : [];
+
+        return { success: true, message: "Posts trouvés", posts };
+    } catch {
+        return { success: false, message: "Erreur lors de la recherche des posts", posts: [] };
+    }
+};
+
+
+export const likePost = async (
+    postId: string,
+    token: string
+): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/reactions`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+                postId,
+                type: "LIKE",
+            }),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Post liké avec succès" };
+    } catch {
+        return { success: false, message: "Erreur lors de l'ajout du like" };
+    }
+};
+
+export const dislikePost = async (
+    postId: string,
+    token: string
+): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/reactions/${postId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Like retiré avec succès" };
+    } catch {
+        return { success: false, message: "Erreur lors du retrait du like" };
+    }
+};
+
+export const getPostLikedStatus = async (
+    postId: string,
+    token: string
+): Promise<{ success: boolean; message: string; liked: boolean }> => {
+    try {
+        const response = await fetch(`${API_URL}/reactions/posts/${postId}/liked`, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}`, liked: false };
+        }
+
+        const data = (await response.json()) as { liked?: boolean };
+        return { success: true, message: "Statut like récupéré", liked: Boolean(data?.liked) };
+    } catch {
+        return { success: false, message: "Erreur lors de la récupération du statut like", liked: false };
     }
 };

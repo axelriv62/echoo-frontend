@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { AppBar, Toolbar, Box, Button, Menu, MenuItem } from '@mui/material';
 import { Link, useNavigate } from "react-router";
-import {ROLES_KEY, TOKEN_KEY} from "../../utils/constants";
+import {ID_KEY, ROLES_KEY, TOKEN_KEY} from "../../utils/constants";
 import { useProfile } from "../../hooks/useProfile";
 import { deactivate } from "../../hooks/auth";
 import logo from "../../assets/logo.png";
@@ -14,7 +14,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { name: 'Accueil', path: '/' },
-    { name: 'Recommandations', path: '/recommendations', requiresAuth: true },
 ];
 
 type NavBarProps = {
@@ -39,6 +38,7 @@ const NavBar: React.FC<NavBarProps> = ({ token, setToken }) => {
     const handleLogout = () => {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(ROLES_KEY);
+        localStorage.removeItem(ID_KEY);
         setToken(null);
         setActive(navItems[0].name);
         handleMenuClose();
