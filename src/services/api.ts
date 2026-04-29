@@ -87,6 +87,38 @@ export const followUser = async (
     }
 };
 
+export const toggleIgnoreUser = async (
+    userId: string,
+    token: string
+): Promise<{ success: boolean; message: string }> => {
+    try {
+        const response = await fetch(`${API_URL}/users/ignore-user/${userId}`, {
+            method: "PATCH",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Action ignore mise à jour" };
+    } catch {
+        return { success: false, message: "Impossible de mettre à jour l'ignore pour le moment" };
+    }
+};
+
 export const getMyFollowedUsers = async (
     token: string
 ): Promise<{ success: boolean; message: string; userIds: string[] }> => {
