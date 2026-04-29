@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { getRecommendedUsers, type RecommendedUser } from '../../hooks/RecommendedUsers';
 import FollowUserButton from '../FollowUserButton/FollowUserButton';
-import { TOKEN_KEY } from '../../utils/constants';
 import { getMyFollowedUsers } from '../../services/api';
 
 type RecommendedUsersProps = {
@@ -36,10 +35,9 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 		let isMounted = true;
 
 		const loadSuggestedUsers = async () => {
-			const authToken = token ?? localStorage.getItem(TOKEN_KEY);
 			const [result, followedResult] = await Promise.all([
 				getRecommendedUsers(),
-				authToken ? getMyFollowedUsers(authToken) : Promise.resolve({ success: false, message: "", userIds: [] }),
+				getMyFollowedUsers(),
 			]);
 			if (!isMounted) {
 				return;
@@ -141,7 +139,6 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 									<FollowUserButton
 										key={`${user.id}-${followedUserIds.has(user.id) ? "following" : "not-following"}`}
 										userId={user.id}
-										token={token}
 										initialIsFollowing={followedUserIds.has(user.id)}
 										onFollowSuccess={onFollowSuccess}
 									/>

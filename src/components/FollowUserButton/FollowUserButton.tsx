@@ -1,16 +1,14 @@
 import { useState, type MouseEvent } from "react";
-import { TOKEN_KEY } from "../../utils/constants";
 import { followUser } from "../../services/api";
 
 type FollowUserButtonProps = {
 	userId: string;
-	token?: string | null;
 	initialIsFollowing?: boolean;
 	onFollowSuccess?: () => void | Promise<void>;
 	className?: string;
 };
 
-const FollowUserButton = ({ userId, token, initialIsFollowing = false, onFollowSuccess, className }: FollowUserButtonProps) => {
+const FollowUserButton = ({ userId, initialIsFollowing = false, onFollowSuccess, className }: FollowUserButtonProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
 	const [error, setError] = useState<string | null>(null);
@@ -22,16 +20,10 @@ const FollowUserButton = ({ userId, token, initialIsFollowing = false, onFollowS
 			return;
 		}
 
-		const authToken = token ?? localStorage.getItem(TOKEN_KEY);
-		if (!authToken) {
-			setError("Veuillez vous connecter pour suivre cet utilisateur");
-			return;
-		}
-
 		setIsLoading(true);
 		setError(null);
 
-		const result = await followUser(userId, authToken);
+		const result = await followUser(userId);
 
 		if (result.success) {
 			setIsFollowing((prev) => !prev);

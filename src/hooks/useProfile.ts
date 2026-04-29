@@ -37,7 +37,7 @@ export const useProfile = (token: string | null) => {
             }
 
             try {
-                const data = await getUserProfile(token);
+                const data = await getUserProfile();
                 if (isActive) {
                     setProfile(data);
                 }
@@ -60,16 +60,12 @@ export const useProfile = (token: string | null) => {
     const updateProfile = async (
         payload: UpdateUserProfilePayload
     ): Promise<{ user: User | null; requiresReauth: boolean }> => {
-        if (!token) {
-            setUpdateError("Token manquant");
-            return { user: null, requiresReauth: false };
-        }
 
         setUpdating(true);
         setUpdateError(null);
 
         try {
-            const updated = await updateUserProfile(token, payload);
+            const updated = await updateUserProfile(payload);
             const requiresReauth = Boolean(profile?.username && updated.username !== profile.username);
             setProfile(updated);
             return { user: updated, requiresReauth };
@@ -113,7 +109,7 @@ export const usePublicProfile = (userId: string | null, token: string | null = n
             }
 
             try {
-                const data = await getPublicProfileById(userId, token);
+                const data = await getPublicProfileById(userId);
                 if (isActive) {
                     setProfile(data);
                 }

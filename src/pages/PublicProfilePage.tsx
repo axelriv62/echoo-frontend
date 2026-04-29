@@ -39,8 +39,8 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
 
             try {
                 const [followedResult, me] = await Promise.all([
-                    getMyFollowedUsers(token),
-                    getUserProfile(token),
+                    getMyFollowedUsers(),
+                    getUserProfile(),
                 ]);
 
                 if (!isMounted) {
@@ -178,7 +178,6 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                             <FollowUserButton
                                                 key={`${profile.id}-${followedUserIds.has(profile.id) ? 'following' : 'not-following'}`}
                                                 userId={profile.id}
-                                                token={token}
                                                 initialIsFollowing={followedUserIds.has(profile.id)}
                                             />
                                             <IgnoreUserButton

@@ -87,7 +87,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         const onIgnoredUsersChanged = async () => {
             if (!token) return;
             try {
-                const me = await getUserProfile(token);
+                const me = await getUserProfile();
                 setIgnoredUsersSet(new Set(me.ignoredUsers ?? []));
                 if (refreshPostsRef.current) await refreshPostsRef.current();
             } catch {

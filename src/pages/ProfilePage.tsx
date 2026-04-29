@@ -11,18 +11,9 @@ const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (tok
     const { profile, loading, error } = usePublicProfile(myUserId || null, token);
 
     useEffect(() => {
-        if (!token) {
-            navigate("/login");
-            return;
-        }
-
         const loadMyProfile = async () => {
-            try {
-                const me = await getUserProfile(token);
-                setMyUserId(me.id);
-            } catch {
-                navigate("/login");
-            }
+            const me = await getUserProfile();
+            setMyUserId(me.id);
         };
 
         loadMyProfile();

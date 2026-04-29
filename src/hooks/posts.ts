@@ -218,10 +218,12 @@ export const deleteTopic = async (topicId: string): Promise<{ success: boolean; 
     }
 };
 
-export const deletePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const deletePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter" };
+    }
+
     try {
         const response = await fetch(`${API_URL}/posts/${postId}`, {
             method: "DELETE",

@@ -32,7 +32,7 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
         localStorage.setItem(USERNAME_KEY, username);
 
         try {
-            const me = await getUserProfile(data.token);
+            const me = await getUserProfile();
             const roles = me.roles ?? [];
             const id = me.id;
             localStorage.setItem(ROLES_KEY, JSON.stringify(roles));

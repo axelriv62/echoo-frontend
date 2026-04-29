@@ -1,7 +1,12 @@
-import { API_URL } from "../utils/constants";
+import {API_URL, TOKEN_KEY} from "../utils/constants";
 import type { Post, UpdateUserProfilePayload, User } from "../utils/types";
 
-export const getUserProfile = async (token: string): Promise<User> => {
+export const getUserProfile = async (): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/get-me`, {
             method: "GET",
@@ -25,7 +30,12 @@ export const getUserProfile = async (token: string): Promise<User> => {
     }
 };
 
-export const getPublicProfileById = async (userId: string, token: string | null = null): Promise<User> => {
+export const getPublicProfileById = async (userId: string): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const headers: HeadersInit = {
             "Content-Type": "application/json",
@@ -55,10 +65,12 @@ export const getPublicProfileById = async (userId: string, token: string | null 
     }
 };
 
-export const followUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const followUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/follow-user/${userId}`, {
             method: "PATCH",
@@ -87,10 +99,12 @@ export const followUser = async (
     }
 };
 
-export const toggleIgnoreUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const toggleIgnoreUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/ignore-user/${userId}`, {
             method: "PATCH",
@@ -119,9 +133,12 @@ export const toggleIgnoreUser = async (
     }
 };
 
-export const getMyFollowedUsers = async (
-    token: string
-): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", userIds: [] };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/me/followed-users`, {
             method: "GET",
@@ -176,10 +193,12 @@ export const getMyFollowedUsers = async (
     }
 };
 
-export const updateUserProfile = async (
-    token: string,
-    payload: UpdateUserProfilePayload
-): Promise<User> => {
+export const updateUserProfile = async (payload: UpdateUserProfilePayload): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const params = new URLSearchParams();
         payload.topicsIds.forEach((topicId) => params.append("topics", topicId));
@@ -227,9 +246,13 @@ export const updateUserProfile = async (
 };
 
 export const searchUsers = async (
-    query: string,
-    token: string | null = null
+    query: string
 ): Promise<{ success: boolean; message: string; users: Array<{ id: string; username: string; imageProfile: string | null }> }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", users: [] };
+    }
+
     if (!query.trim()) {
         return { success: true, message: "Requête vide", users: [] };
     }
@@ -262,9 +285,13 @@ export const searchUsers = async (
 };
 
 export const searchPosts = async (
-    query: string,
-    token: string | null = null
+    query: string
 ): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", posts: [] };
+    }
+
     if (!query.trim()) {
         return { success: true, message: "Requête vide", posts: [] };
     }
@@ -302,10 +329,12 @@ export const searchPosts = async (
     }
 };
 
-export const getPostsByUser = async (
-    userId: string,
-    token: string | null = null
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+export const getPostsByUser = async (userId: string): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", posts: [] };
+    }
+
     try {
         const headers: HeadersInit = {
             "Content-Type": "application/json",
@@ -340,10 +369,12 @@ export const getPostsByUser = async (
 };
 
 
-export const likePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const likePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/reactions`, {
             method: "POST",
@@ -377,10 +408,12 @@ export const likePost = async (
     }
 };
 
-export const dislikePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const dislikePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/reactions/${postId}`, {
             method: "DELETE",
@@ -409,10 +442,12 @@ export const dislikePost = async (
     }
 };
 
-export const getPostLikedStatus = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string; liked: boolean }> => {
+export const getPostLikedStatus = async (postId: string): Promise<{ success: boolean; message: string; liked: boolean }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", liked: false };
+    }
+
     try {
         const response = await fetch(`${API_URL}/reactions/posts/${postId}/liked`, {
             method: "GET",
