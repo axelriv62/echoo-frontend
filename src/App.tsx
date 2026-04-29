@@ -6,6 +6,8 @@ import LoginPage from "./pages/LoginPage.tsx";
 import HomePage from "./pages/HomePage.tsx";
 import ProfilePage from "./pages/ProfilePage.tsx";
 import PublicProfilePage from "./pages/PublicProfilePage.tsx";
+import RecommendationsPage from "./pages/RecommendationsPage.tsx";
+import GamePage from "./pages/GamePage.tsx";
 
 function ERROR() {
     const navigate = useNavigate();
@@ -41,6 +43,7 @@ function App({ token, setToken }: { token: string | null; setToken: (token: stri
             <Route path="/profile" element={<ProfilePage token={token} setToken={setToken} />} />
             <Route path="/user/:userId" element={<PublicProfilePage token={token} setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
+            <Route path="/game" element={<GamePage />} />
         </Routes>
     )
 }
