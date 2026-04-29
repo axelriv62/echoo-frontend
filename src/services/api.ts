@@ -1,5 +1,5 @@
 import { API_URL } from "../utils/constants";
-import type { UpdateUserProfilePayload, User } from "../utils/types";
+import type { Post, UpdateUserProfilePayload, User } from "../utils/types";
 
 export const getUserProfile = async (token: string): Promise<User> => {
     try {
@@ -228,3 +228,45 @@ export const searchUsers = async (
         return { success: false, message: "Erreur lors de la recherche", users: [] };
     }
 };
+
+export const searchPosts = async (
+    query: string,
+    token: string | null = null
+): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    if (!query.trim()) {
+        return { success: true, message: "Requête vide", posts: [] };
+    }
+
+    try {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_URL}/posts/search?query=${encodeURIComponent(query)}`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
+        }
+
+        const data = await response.json();
+        const posts = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.content)
+                ? data.content
+                : Array.isArray(data?.posts)
+                    ? data.posts
+                    : [];
+
+        return { success: true, message: "Posts trouvés", posts };
+    } catch {
+        return { success: false, message: "Erreur lors de la recherche des posts", posts: [] };
+    }
+};
+

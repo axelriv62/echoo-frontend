@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { getPosts, getTopic, createPost, type CreatePostPayload } from "../hooks/posts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
@@ -19,10 +19,12 @@ interface PostFormState {
 
 const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [posts, setPosts] = useState<Post[]>([]);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [loading, setLoading] = useState(true);
     const [showTopicsModal, setShowTopicsModal] = useState(false);
+    const highlightPostId = (location.state as { highlightPostId?: string } | null)?.highlightPostId ?? null;
     useProfile(token);
 
     const [formData, setFormData] = useState<PostFormState>({
@@ -47,6 +49,17 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         refreshPosts();
         loadTopics();
     }, [refreshPosts]);
+
+    useEffect(() => {
+        if (!highlightPostId) {
+            return;
+        }
+
+        const element = document.getElementById(`post-${highlightPostId}`);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [highlightPostId, posts]);
 
     const loadTopics = async () => {
         const result = await getTopic();
@@ -258,7 +271,13 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             ) : (
                 <div className="divide-y divide-[#e5e7eb]">
                     {posts.map((post) => (
-                        <PostCard key={post.id} post={post} />
+                        <div
+                            key={post.id}
+                            id={`post-${post.id}`}
+                            className={highlightPostId === post.id ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
+                        >
+                            <PostCard post={post} />
+                        </div>
                     ))}
                 </div>
             )}
