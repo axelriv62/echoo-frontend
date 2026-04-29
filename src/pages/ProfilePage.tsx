@@ -2,10 +2,13 @@ import { useNavigate } from "react-router";
 import { useProfile } from "../hooks/useProfile";
 import ProfileCard from "../components/ProfileCard/ProfileCard";
 import { ROLES_KEY, TOKEN_KEY } from "../utils/constants";
+import LogoutButton from "../components/logout-button/LogoutButton.tsx";
+import DeactivateAccountButton from "../components/disable-button/DisableButton.tsx";
 
-const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
+const ProfilePage = ({setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
-    const { profile, loading, error, updateProfile, updating, updateError } = useProfile(token);
+    const token = localStorage.getItem(TOKEN_KEY);
+    const { profile, loading, error, updateProfile, updating, updateError } = useProfile();
 
     const handleUpdateProfile = async (payload: Parameters<typeof updateProfile>[0]) => {
         const result = await updateProfile(payload);
@@ -49,6 +52,10 @@ const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (tok
                         updating={updating}
                         updateError={updateError}
                     />
+                </div>
+                <div className="mt-4 max-w-40 space-y-2 mx-auto ">
+                    <LogoutButton token={token} setToken={setToken} />
+                    <DeactivateAccountButton token={token} setToken={setToken} />
                 </div>
             </div>
         </div>

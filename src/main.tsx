@@ -12,7 +12,7 @@ function Root() {
     return (
         <StrictMode>
             <BrowserRouter>
-                <NavBar token={token} setToken={setToken} />
+                {token && <NavBar />}
                 <App token={token} setToken={setToken} />
             </BrowserRouter>
         </StrictMode>

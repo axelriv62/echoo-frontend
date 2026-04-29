@@ -1,7 +1,17 @@
-import { API_URL } from "../utils/constants";
-import type { Post, UpdateUserProfilePayload, User } from "../utils/types";
+import {API_URL, TOKEN_KEY} from "../utils/constants";
+import type { UpdateUserProfilePayload, User } from "../utils/types";
 
-export const getUserProfile = async (token: string): Promise<User> => {
+/**
+ * Fetches the profile of the currently authenticated user from the API.
+ * @returns A promise that resolves to the user's profile data.
+ * @throws An error if the user is not authenticated or if there is an issue with the API request.
+ */
+export const getUserProfile = async (): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/get-me`, {
             method: "GET",
@@ -25,7 +35,12 @@ export const getUserProfile = async (token: string): Promise<User> => {
     }
 };
 
-export const getPublicProfileById = async (userId: string, token: string | null = null): Promise<User> => {
+export const getPublicProfileById = async (userId: string): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const headers: HeadersInit = {
             "Content-Type": "application/json",
@@ -55,10 +70,12 @@ export const getPublicProfileById = async (userId: string, token: string | null 
     }
 };
 
-export const followUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const followUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/follow-user/${userId}`, {
             method: "PATCH",
@@ -87,10 +104,12 @@ export const followUser = async (
     }
 };
 
-export const toggleIgnoreUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+export const toggleIgnoreUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/ignore-user/${userId}`, {
             method: "PATCH",
@@ -119,9 +138,12 @@ export const toggleIgnoreUser = async (
     }
 };
 
-export const getMyFollowedUsers = async (
-    token: string
-): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", userIds: [] };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/me/followed-users`, {
             method: "GET",
@@ -176,10 +198,12 @@ export const getMyFollowedUsers = async (
     }
 };
 
-export const updateUserProfile = async (
-    token: string,
-    payload: UpdateUserProfilePayload
-): Promise<User> => {
+export const updateUserProfile = async (payload: UpdateUserProfilePayload): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const params = new URLSearchParams();
         payload.topicsIds.forEach((topicId) => params.append("topics", topicId));
@@ -227,9 +251,13 @@ export const updateUserProfile = async (
 };
 
 export const searchUsers = async (
-    query: string,
-    token: string | null = null
+    query: string
 ): Promise<{ success: boolean; message: string; users: Array<{ id: string; username: string; imageProfile: string | null }> }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", users: [] };
+    }
+
     if (!query.trim()) {
         return { success: true, message: "Requête vide", users: [] };
     }
@@ -258,186 +286,5 @@ export const searchUsers = async (
         return { success: true, message: "Utilisateurs trouvés", users };
     } catch {
         return { success: false, message: "Erreur lors de la recherche", users: [] };
-    }
-};
-
-export const searchPosts = async (
-    query: string,
-    token: string | null = null
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
-    if (!query.trim()) {
-        return { success: true, message: "Requête vide", posts: [] };
-    }
-
-    try {
-        const headers: HeadersInit = {
-            "Content-Type": "application/json",
-        };
-
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`${API_URL}/posts/search?query=${encodeURIComponent(query)}`, {
-            method: "GET",
-            headers,
-        });
-
-        if (!response.ok) {
-            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
-        }
-
-        const data = await response.json();
-        const posts = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.content)
-                ? data.content
-                : Array.isArray(data?.posts)
-                    ? data.posts
-                    : [];
-
-        return { success: true, message: "Posts trouvés", posts };
-    } catch {
-        return { success: false, message: "Erreur lors de la recherche des posts", posts: [] };
-    }
-};
-
-export const getPostsByUser = async (
-    userId: string,
-    token: string | null = null
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
-    try {
-        const headers: HeadersInit = {
-            "Content-Type": "application/json",
-        };
-
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`${API_URL}/posts/user/${encodeURIComponent(userId)}`, {
-            method: "GET",
-            headers,
-        });
-
-        if (!response.ok) {
-            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
-        }
-
-        const data = await response.json();
-        const posts = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.content)
-                ? data.content
-                : Array.isArray(data?.posts)
-                    ? data.posts
-                    : [];
-
-        return { success: true, message: "Posts par utilisateur trouvés", posts };
-    } catch {
-        return { success: false, message: "Erreur lors de la récupération des posts par utilisateur", posts: [] };
-    }
-};
-
-
-export const likePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                postId,
-                type: "LIKE",
-            }),
-        });
-
-        if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
-            }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}` };
-        }
-
-        return { success: true, message: "Post liké avec succès" };
-    } catch {
-        return { success: false, message: "Erreur lors de l'ajout du like" };
-    }
-};
-
-export const dislikePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions/${postId}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
-            }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}` };
-        }
-
-        return { success: true, message: "Like retiré avec succès" };
-    } catch {
-        return { success: false, message: "Erreur lors du retrait du like" };
-    }
-};
-
-export const getPostLikedStatus = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string; liked: boolean }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions/posts/${postId}/liked`, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
-            }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}`, liked: false };
-        }
-
-        const data = (await response.json()) as { liked?: boolean };
-        return { success: true, message: "Statut like récupéré", liked: Boolean(data?.liked) };
-    } catch {
-        return { success: false, message: "Erreur lors de la récupération du statut like", liked: false };
     }
 };

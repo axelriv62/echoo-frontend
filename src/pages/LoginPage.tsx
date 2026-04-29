@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { signin } from "../hooks/auth";
+import { signin } from "../services/auth.ts";
 
 /**
  * LoginPage component allows users to log in by providing their username and password.

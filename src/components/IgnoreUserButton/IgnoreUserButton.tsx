@@ -1,6 +1,5 @@
 import { useState, type MouseEvent } from "react";
-import { TOKEN_KEY } from "../../utils/constants";
-import { toggleIgnoreUser } from "../../services/api";
+import { toggleIgnoreUser } from "../../services/users.ts";
 
 type IgnoreUserButtonProps = {
     userId: string;
@@ -12,7 +11,6 @@ type IgnoreUserButtonProps = {
 
 const IgnoreUserButton = ({
     userId,
-    token,
     initialIsIgnored = false,
     onIgnoreSuccess,
     className,
@@ -28,16 +26,10 @@ const IgnoreUserButton = ({
             return;
         }
 
-        const authToken = token ?? localStorage.getItem(TOKEN_KEY);
-        if (!authToken) {
-            setError("Veuillez vous connecter pour ignorer cet utilisateur");
-            return;
-        }
-
         setIsLoading(true);
         setError(null);
 
-        const result = await toggleIgnoreUser(userId, authToken);
+        const result = await toggleIgnoreUser(userId);
 
         if (result.success) {
             setIsIgnored((previous) => !previous);

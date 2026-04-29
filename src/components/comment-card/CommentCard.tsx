@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Comment } from "../../utils/types";
-import { deleteComment } from "../../hooks/comments";
+import { deleteComment } from "../../services/comments.ts";
 
 interface CommentCardProps {
     comment: Comment;

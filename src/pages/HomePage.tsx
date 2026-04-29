@@ -1,13 +1,15 @@
 import {useState, useEffect, useCallback, useRef} from "react";
 import { useLocation, useNavigate } from "react-router";
-import { getPosts, getTopic, createPost, type CreatePostPayload } from "../hooks/posts";
-import { getUserProfile } from "../services/api";
+import { getPosts, createPost, type CreatePostPayload } from "../services/posts.ts";
+import { getTopics } from "../services/topics.ts";
+import { getUserProfile } from "../services/users.ts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post, Topic } from "../utils/types";
 import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
 import RecommendedPosts from "../components/suggested_post/RecommendedPosts";
 import TopicsModal from "../components/topics-modal/TopicsModal";
+import {TOKEN_KEY} from "../utils/constants.ts";
 
 interface PostFormState {
     title: string;
@@ -21,7 +23,7 @@ interface PostFormState {
 
 const RECOMMENDATION_INTERVAL = 8;
 
-const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
+const HomePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [posts, setPosts] = useState<Post[]>([]);
@@ -29,9 +31,10 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     const [loading, setLoading] = useState(true);
     const [showTopicsModal, setShowTopicsModal] = useState(false);
     const highlightPostId = (location.state as { highlightPostId?: string } | null)?.highlightPostId ?? null;
-    useProfile(token);
-    const { profile: myProfile } = useProfile(token);
+    useProfile();
+    const { profile: myProfile } = useProfile();
     const [ignoredUsersSet, setIgnoredUsersSet] = useState<Set<string>>(new Set(myProfile?.ignoredUsers ?? []));
+    const token = localStorage.getItem(TOKEN_KEY);
 
     const [formData, setFormData] = useState<PostFormState>({
         title: '',
@@ -70,7 +73,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     }, [highlightPostId, posts]);
 
     const loadTopics = async () => {
-        const result = await getTopic();
+        const result = await getTopics();
         if (result.success) {
             setTopics(result.topics);
         }
@@ -85,9 +88,8 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         });
 
         const onIgnoredUsersChanged = async () => {
-            if (!token) return;
             try {
-                const me = await getUserProfile(token);
+                const me = await getUserProfile();
                 setIgnoredUsersSet(new Set(me.ignoredUsers ?? []));
                 if (refreshPostsRef.current) await refreshPostsRef.current();
             } catch {
@@ -117,7 +119,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                 }
 
                 // load topics as well
-                const topicsResult = await getTopic();
+                const topicsResult = await getTopics();
                 if (isMounted && topicsResult.success) {
                     setTopics(topicsResult.topics);
                 }
@@ -219,8 +221,8 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             if ((index + 1) % RECOMMENDATION_INTERVAL === 0) {
                 items.push(
                     <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-                        <RecommendedUsers token={token} onFollowSuccess={refreshPosts} />
-                        <RecommendedPosts token={token} />
+                        <RecommendedUsers onFollowSuccess={refreshPosts} />
+                        <RecommendedPosts />
                     </section>
                 );
             }

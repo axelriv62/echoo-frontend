@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
 import FollowUserButton from "../components/FollowUserButton/FollowUserButton";
 import IgnoreUserButton from "../components/IgnoreUserButton/IgnoreUserButton";
-import { getMyFollowedUsers, getUserProfile } from "../services/api";
+import { getMyFollowedUsers, getUserProfile } from "../services/users.ts";
 
 interface PublicProfilePageProps {
     token: string | null;
@@ -39,8 +39,8 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
 
             try {
                 const [followedResult, me] = await Promise.all([
-                    getMyFollowedUsers(token),
-                    getUserProfile(token),
+                    getMyFollowedUsers(),
+                    getUserProfile(),
                 ]);
 
                 if (!isMounted) {
@@ -178,7 +178,6 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                             <FollowUserButton
                                                 key={`${profile.id}-${followedUserIds.has(profile.id) ? 'following' : 'not-following'}`}
                                                 userId={profile.id}
-                                                token={token}
                                                 initialIsFollowing={followedUserIds.has(profile.id)}
                                             />
                                             <IgnoreUserButton

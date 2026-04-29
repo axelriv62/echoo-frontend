@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import type { Post, Comment } from "../../utils/types.ts";
-import { createComment } from "../../hooks/comments";
+import { createComment } from "../../services/comments.ts";
 import CommentCard from "../comment-card/CommentCard";
 import CommentForm from "../comment-form/CommentForm";
 import { ID_KEY } from "../../utils/constants.ts";
-import { dislikePost, getPostLikedStatus, likePost } from "../../services/api";
+import { dislikePost, getPostLikedStatus, likePost } from "../../services/posts";
 import { TOKEN_KEY } from "../../utils/constants";
-import { deletePost } from "../../hooks/posts";
+import { deletePost } from "../../services/posts.ts";
 
 const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Promise<void> }> = ({ post, onDelete }) => {
     const profileImage = post.user.imageProfile || '/src/assets/no-profile-picture.jpg';
@@ -26,19 +26,14 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     // Récupérer l'ID utilisateur actuel
     useEffect(() => {
         const userId = localStorage.getItem(ID_KEY);
-        const token = localStorage.getItem(TOKEN_KEY);
         let isMounted = true;
-
-        if (!token) {
-            return;
-        }
 
         if (userId) {
             setCurrentUserId(userId);
         }
 
         (async () => {
-            const result = await getPostLikedStatus(post.id, token);
+            const result = await getPostLikedStatus(post.id);
 
             if (!isMounted) {
                 return;
@@ -59,15 +54,9 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     }, [post.id]);
 
     const handleDeletePost = async () => {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) {
-            alert("Vous devez être connecté pour supprimer ce post");
-            return;
-        }
-
         setIsLoading(true);
         try {
-            const result = await deletePost(post.id, token);
+            const result = await deletePost(post.id);
             if (result.success) {
                 if (onDelete) {
                     await onDelete(post.id);
@@ -100,12 +89,6 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     };
 
     const handleLikeClick = async () => {
-        const token = localStorage.getItem(TOKEN_KEY);
-        if (!token) {
-            alert("Vous devez être connecté pour liker un post");
-            return;
-        }
-
         if (isLoading || isCheckingLike) {
             return;
         }
@@ -113,13 +96,13 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         setIsLoading(true);
         try {
             if (isLiked) {
-                const result = await dislikePost(post.id, token);
+                const result = await dislikePost(post.id);
                 if (result.success) {
                     setIsLiked(false);
                     setLikeCount((previousCount) => Math.max(0, previousCount - 1));
                 }
             } else {
-                const result = await likePost(post.id, token);
+                const result = await likePost(post.id);
                 if (result.success) {
                     setIsLiked(true);
                     setLikeCount((previousCount) => previousCount + 1);

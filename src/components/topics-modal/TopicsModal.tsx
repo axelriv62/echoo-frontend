@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTopic, createTopic, deleteTopic } from '../../hooks/posts';
+import { getTopics, createTopic, deleteTopic } from '../../services/topics.ts';
 import type { Topic } from '../../utils/types';
 import {ROLES_KEY} from "../../utils/constants.ts";
 
@@ -35,7 +35,7 @@ const TopicsModal = ({
 
     const loadTopics = async () => {
         setLoading(true);
-        const result = await getTopic();
+        const result = await getTopics();
 
         if (result.success) {
             setTopics(result.topics);
