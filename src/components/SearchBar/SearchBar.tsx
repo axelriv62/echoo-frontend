@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { searchPosts, searchUsers } from '../../services/api';
-import { getPosts } from '../../hooks/posts';
+import { searchPosts, searchUsers, getPostsByUser, getUserProfile } from '../../services/api';
 import { TOKEN_KEY } from '../../utils/constants';
 import type { Post } from '../../utils/types';
 
@@ -68,7 +67,35 @@ const SearchBar: React.FC = () => {
 
 		const token = localStorage.getItem(TOKEN_KEY);
 		const postsResult = await searchPosts(trimmedQuery, token);
-		const creatorPostsResult = await getPosts();
+
+		// find users matching the query to fetch their posts via backend
+		const usersResult = await searchUsers(trimmedQuery, token);
+		let creatorPosts: Post[] = [];
+		// prepare list of users to fetch posts for (limit to first 5)
+		const usersToFetch = usersResult.success ? usersResult.users.slice(0, 5) : [];
+
+		// also include current authenticated user if their username matches the query
+		try {
+			if (token) {
+				const me = await getUserProfile(token);
+				const normalizedQuery = trimmedQuery.toLowerCase();
+				if (me?.username && me.username.toLowerCase().includes(normalizedQuery)) {
+					const alreadyIncluded = usersToFetch.some((u) => u.id === me.id);
+					if (!alreadyIncluded) {
+						usersToFetch.unshift({ id: me.id, username: me.username, imageProfile: me.imageProfile ?? null });
+					}
+				}
+			}
+		} catch {
+			// ignore errors fetching current user profile
+		}
+
+		if (usersToFetch.length > 0) {
+			// limit to 5 users to avoid too many requests
+			const postsByUserPromises = usersToFetch.slice(0, 5).map((u) => getPostsByUser(u.id, token));
+			const postsByUserResults = await Promise.all(postsByUserPromises);
+			creatorPosts = postsByUserResults.flatMap((r) => (r.success ? r.posts : []));
+		}
 
 		if (requestId !== searchRequestIdRef.current) {
 			return;
@@ -76,8 +103,8 @@ const SearchBar: React.FC = () => {
 
 		if (postsResult.success) {
 			const normalizedQuery = trimmedQuery.toLowerCase();
-			const creatorMatches = creatorPostsResult.success && creatorPostsResult.posts
-				? creatorPostsResult.posts.filter((post) => post.user.username.toLowerCase().includes(normalizedQuery))
+			const creatorMatches = creatorPosts
+				? creatorPosts.filter((post) => post.user.username.toLowerCase().includes(normalizedQuery))
 				: [];
 
 			const mergedPosts = [...postsResult.posts, ...creatorMatches].filter(
