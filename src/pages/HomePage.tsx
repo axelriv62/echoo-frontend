@@ -6,6 +6,7 @@ import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post, Topic } from "../utils/types";
 import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
+import RecommendedPosts from "../components/suggested_post/RecommendedPosts";
 import TopicsModal from "../components/topics-modal/TopicsModal";
 
 interface PostFormState {
@@ -17,6 +18,8 @@ interface PostFormState {
     error: string | null;
     success: string | null;
 }
+
+const RECOMMENDATION_INTERVAL = 8;
 
 const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
@@ -197,6 +200,35 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         setPosts((prevPosts) => prevPosts.filter((p) => p.id !== deletedPostId));
     };
 
+    const renderFeed = () => {
+        const items: React.ReactNode[] = [];
+
+        posts.forEach((post, index) => {
+            const isHighlighted = highlightPostId === post.id;
+
+            items.push(
+                <div
+                    key={post.id}
+                    id={`post-${post.id}`}
+                    className={isHighlighted ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
+                >
+                    <PostCard post={post} onDelete={handlePostDeleted} />
+                </div>
+            );
+
+            if ((index + 1) % RECOMMENDATION_INTERVAL === 0) {
+                items.push(
+                    <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+                        <RecommendedUsers token={token} onFollowSuccess={refreshPosts} />
+                        <RecommendedPosts token={token} />
+                    </section>
+                );
+            }
+        });
+
+        return items;
+    };
+
     if (!token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#a237ff]/10 to-[#a237ff]/5 p-4">
@@ -324,8 +356,6 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                 </form>
             </div>
 
-                  <RecommendedUsers token={token} onFollowSuccess={refreshPosts} />
-
 
             {loading ? (
                 <div className="p-4 text-center text-gray-500">
@@ -336,16 +366,8 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                     <p className="py-8">Les posts apparaîtront ici</p>
                 </div>
             ) : (
-                <div className="divide-y divide-[#e5e7eb]">
-                    {posts.map((post) => (
-                        <div
-                            key={post.id}
-                            id={`post-${post.id}`}
-                            className={highlightPostId === post.id ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
-                        >
-                            <PostCard post={post} onDelete={handlePostDeleted} />
-                        </div>
-                    ))}
+                <div className="space-y-6 p-4">
+                    {renderFeed()}
                 </div>
             )}
 
