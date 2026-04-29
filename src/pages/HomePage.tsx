@@ -179,6 +179,10 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         }
     };
 
+    const handlePostDeleted = (deletedPostId: string) => {
+        setPosts((prevPosts) => prevPosts.filter((p) => p.id !== deletedPostId));
+    };
+
     if (!token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-[#a237ff]/10 to-[#a237ff]/5 p-4">
@@ -320,7 +324,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             ) : (
                 <div className="divide-y divide-[#e5e7eb]">
                     {posts.map((post) => (
-                        <PostCard key={post.id} post={post} />
+                        <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
                     ))}
                 </div>
             )}

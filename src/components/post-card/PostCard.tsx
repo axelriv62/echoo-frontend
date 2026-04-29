@@ -6,8 +6,9 @@ import CommentForm from "../comment-form/CommentForm";
 import { ID_KEY } from "../../utils/constants.ts";
 import { dislikePost, getPostLikedStatus, likePost } from "../../services/api";
 import { TOKEN_KEY } from "../../utils/constants";
+import { deletePost } from "../../hooks/posts";
 
-const PostCard: React.FC<{ post: Post }> = ({ post }) => {
+const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Promise<void> }> = ({ post, onDelete }) => {
     const profileImage = post.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isImageOpen, setIsImageOpen] = useState(false);
     const [showComments, setShowComments] = useState(false);
@@ -19,7 +20,8 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
     const [likeCount, setLikeCount] = useState(() => post.nbLikes);
     const [isLoading, setIsLoading] = useState(false);
     const [isCheckingLike, setIsCheckingLike] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)));
-
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const canDelete = currentUserId === post.user.id;
 
     // Récupérer l'ID utilisateur actuel
     useEffect(() => {
@@ -55,6 +57,29 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
             isMounted = false;
         };
     }, [post.id]);
+
+    const handleDeletePost = async () => {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) {
+            alert("Vous devez être connecté pour supprimer ce post");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const result = await deletePost(post.id, token);
+            if (result.success) {
+                if (onDelete) {
+                    await onDelete(post.id);
+                }
+                setShowDeleteModal(false);
+            } else {
+                alert(result.message);
+            }
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleCommentSubmit = async (content: string, parentCommentId?: string | null) => {
         setIsCommentLoading(true);
@@ -182,6 +207,19 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
                         </svg>
                         {comments.length} commentaire{comments.length !== 1 ? 's' : ''}
                     </button>
+                    {canDelete && (
+                        <button
+                            onClick={() => setShowDeleteModal(true)}
+                            disabled={isLoading}
+                            className="text-red-600 hover:text-red-800 font-semibold text-sm flex items-center gap-2"
+                            aria-label="Supprimer le post"
+                        >
+                            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" d="M19 7L5 7M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12" />
+                            </svg>
+                            Supprimer
+                        </button>
+                    )}
                 </div>
 
                 {/* Commentaires */}
@@ -233,6 +271,41 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
                         >
                             ✕
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {showDeleteModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    onClick={() => !isLoading && setShowDeleteModal(false)}
+                >
+                    <div
+                        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">Supprimer ce post ?</h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Cette action est irreversible.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setShowDeleteModal(false)}
+                                disabled={isLoading}
+                                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                            >
+                                Annuler
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleDeletePost}
+                                disabled={isLoading}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                            >
+                                {isLoading ? "Suppression..." : "Supprimer"}
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
