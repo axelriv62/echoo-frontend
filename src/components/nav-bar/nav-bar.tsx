@@ -1,116 +1,68 @@
-import React, { useState } from "react";
-import { AppBar, Toolbar, Box, Button, Menu, MenuItem } from '@mui/material';
-import { Link, useNavigate } from "react-router";
-import {ID_KEY, ROLES_KEY, TOKEN_KEY} from "../../utils/constants";
-import { useProfile } from "../../hooks/useProfile";
-import { deactivate } from "../../hooks/auth";
+import React from "react";
+import { AppBar, Toolbar, Box, Button } from '@mui/material';
+import { useNavigate } from "react-router";
 import logo from "../../assets/logo.png";
 import SearchBar from "../SearchBar/SearchBar";
-interface NavItem {
-    name: string;
-    path: string;
-    requiresAuth?: boolean;
-}
 
-const navItems: NavItem[] = [
-    { name: 'Accueil', path: '/' },
-];
-
-type NavBarProps = {
-    token: string | null;
-    setToken: (token: string | null) => void;
-};
-
-const NavBar: React.FC<NavBarProps> = ({ token, setToken }) => {
-    const [active, setActive] = useState<string>(navItems[0].name);
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+/**
+ * Navigation bar component that displays a logo, search bar, and user action buttons.
+ */
+const NavBar: React.FC = () => {
     const navigate = useNavigate();
-    const { profile, loading: profileLoading } = useProfile(token);
+    const username = localStorage.getItem("username");
 
-    const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
+    const handleLogoClick = () => {
+        navigate('/');
     };
 
-    const handleMenuClose = () => {
-        setAnchorEl(null);
+    const handleProfileClick = () => {
+        navigate('/profile');
     };
-
-    const handleLogout = () => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(ROLES_KEY);
-        localStorage.removeItem(ID_KEY);
-        setToken(null);
-        setActive(navItems[0].name);
-        handleMenuClose();
-        navigate('/login');
-    };
-
-    const handleDeactivate = async () => {
-        const result = await deactivate();
-        if (result.success) {
-            handleLogout();
-        }
-    };
-
-    const visibleItems = navItems.filter(item => !item.requiresAuth || token);
 
     return (
         <AppBar position="sticky" sx={{ backgroundColor: '#000000' }}>
-            <Toolbar>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, marginRight: 'auto' }}>
-                    <img src={logo} alt="echoo logo" style={{ height: 40, width: 'auto' }} />
-                    <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>Echoo</span>
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* Logo to the left */}
+                <Box
+                    onClick={handleLogoClick}
+                    sx={{
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        transition: 'opacity 0.2s',
+                        '&:hover': {
+                            opacity: 0.8,
+                        },
+                    }}
+                >
+                    <img
+                        src={logo}
+                        alt="Logo"
+                        style={{ height: '60px', width: 'auto' }}
+                    />
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 2, marginRight: 2 }}>
+                {/* Search bar in the center */}
+                <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center', mx: 2 }}>
                     <SearchBar />
                 </Box>
 
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                    {visibleItems.map((item) => (
-                        <Link key={item.name} to={item.path} style={{ textDecoration: 'none' }}>
-                            <Button
-                                color="inherit"
-                                onClick={() => setActive(item.name)}
-                                sx={{
-                                    className: active === item.name ? 'navbar-item-active' : 'navbar-item',
-                                    fontSize: '0.95rem',
-                                }}
-                            >
-                                {item.name}
-                            </Button>
-                        </Link>
-                    ))}
+                {/* Profile button to the right */}
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                    <Button
+                        color="inherit"
+                        onClick={handleProfileClick}
+                        sx={{
+                            fontSize: '0.95rem',
+                            textTransform: 'none',
+                            '&:hover': {
+                                color: '#a237ff',
+                            },
+                        }}
+                    >
+                        {username}
+                    </Button>
                 </Box>
-
-                {token ? (
-                    <Box sx={{ marginLeft: 2 }}>
-                        <Button
-                            onClick={handleMenuOpen}
-                            sx={{ color: 'white', textTransform: 'none' }}
-                        >
-                            {profileLoading ? 'Chargement...' : profile?.username || 'Menu'}
-                        </Button>
-                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-                            <MenuItem onClick={() => { navigate('/profile'); handleMenuClose(); }}>
-                                Mon profil
-                            </MenuItem>
-                            <MenuItem onClick={handleLogout}>Déconnexion</MenuItem>
-                            <MenuItem onClick={handleDeactivate} sx={{ color: 'red' }}>
-                                Désactiver le compte
-                            </MenuItem>
-                        </Menu>
-                    </Box>
-                ) : (
-                    <Box sx={{ marginLeft: 2 }}>
-                        <Button color="inherit" onClick={() => navigate('/login')}>
-                            Se connecter
-                        </Button>
-                        <Button color="inherit" onClick={() => navigate('/register')}>
-                            S'inscrire
-                        </Button>
-                    </Box>
-                )}
             </Toolbar>
         </AppBar>
     );

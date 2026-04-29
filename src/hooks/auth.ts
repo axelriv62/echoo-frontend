@@ -1,4 +1,4 @@
-import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY} from '../utils/constants';
+import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY} from '../utils/constants';
 import { getUserProfile } from '../services/api';
 
 // Type to define the shape of the authentication payload for both signin and register functions
@@ -29,6 +29,7 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
 
         const data = await response.json();
         localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(USERNAME_KEY, username);
 
         try {
             const me = await getUserProfile(data.token);
@@ -72,12 +73,12 @@ export const register = async ({ username, password }: AuthPayload): Promise<{ s
 };
 
 /**
- * Deactivate the current user's account by sending a DELETE request to the backend.
+ * Disable the current user's account by sending a DELETE request to the backend.
  * If the deactivation is successful, the authentication token is removed from localStorage and a success message is returned.
  * Otherwise, an error message is returned.
  * @returns An object containing a success boolean and a message string
  */
-export const deactivate = async (): Promise<{ success: boolean; message: string }> => {
+export const disable = async (): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {
