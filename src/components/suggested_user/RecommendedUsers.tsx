@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { getRecommendedUsers, type RecommendedUser } from '../../hooks/RecommendedUsers';
+import { getRecommendedUsers, type RecommendedUser } from '../../services/recommendations.ts';
 import FollowUserButton from '../FollowUserButton/FollowUserButton';
-import { getMyFollowedUsers } from '../../services/api';
+import { getMyFollowedUsers } from '../../services/users.ts';
+import { TOKEN_KEY } from '../../utils/constants.ts';
 
 type RecommendedUsersProps = {
-	token?: string | null;
 	onFollowSuccess?: () => void | Promise<void>;
 };
 
-const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => {
+const RecommendedUsers = ({ onFollowSuccess }: RecommendedUsersProps) => {
 	const navigate = useNavigate();
 	const [users, setUsers] = useState<RecommendedUser[]>([]);
 	const [followedUserIds, setFollowedUserIds] = useState<Set<string>>(new Set());
 	const [loading, setLoading] = useState(true);
 	const [message, setMessage] = useState('');
 	const carouselRef = useRef<HTMLDivElement | null>(null);
+	const token = localStorage.getItem(TOKEN_KEY);
 
 	const scrollCarousel = (direction: 'up' | 'down') => {
 		const container = carouselRef.current;
@@ -153,4 +154,3 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 };
 
 export default RecommendedUsers;
-

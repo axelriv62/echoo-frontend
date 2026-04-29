@@ -3,13 +3,14 @@ import { AppBar, Toolbar, Box, Button } from '@mui/material';
 import { useNavigate } from "react-router";
 import logo from "../../assets/logo.png";
 import SearchBar from "../SearchBar/SearchBar";
+import {USERNAME_KEY} from "../../utils/constants.ts";
 
 /**
  * Navigation bar component that displays a logo, search bar, and user action buttons.
  */
 const NavBar: React.FC = () => {
     const navigate = useNavigate();
-    const username = localStorage.getItem("username");
+    const username = localStorage.getItem(USERNAME_KEY);
 
     const handleLogoClick = () => {
         navigate('/');

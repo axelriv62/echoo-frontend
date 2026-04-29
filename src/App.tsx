@@ -16,12 +16,12 @@ function ProtectedRoute({element, token}: { element: React.ReactNode; token: str
 function App({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     return (
         <Routes>
-            <Route path="/" element={<HomePage token={token} setToken={setToken} />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage setToken={setToken} />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProtectedRoute element={<ProfilePage token={token} setToken={setToken} />} token={token} />} />
-            <Route path="/user/:userId" element={<PublicProfilePage token={token} setToken={setToken} />} />
-            <Route path="/game" element={<ProtectedRoute element={<GamePage token={token} setToken={setToken} />} token={token} />} />
+            <Route path="/user/:userId" element={<ProtectedRoute element={<PublicProfilePage token={token} setToken={setToken} />} token={token}  />} />
+            <Route path="/game" element={<ProtectedRoute element={<GamePage />} token={token} />} />
             <Route path="*" element={<ErrorPage />} />
         </Routes>
     );

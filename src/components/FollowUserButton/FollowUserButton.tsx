@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from "react";
-import { followUser } from "../../services/api";
+import { followUser } from "../../services/users.ts";
 
 type FollowUserButtonProps = {
 	userId: string;

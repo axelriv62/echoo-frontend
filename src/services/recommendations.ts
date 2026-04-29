@@ -1,4 +1,4 @@
-import {API_URL, TOKEN_KEY} from '../utils/constants';
+import {API_URL, TOKEN_KEY} from '../utils/constants.ts';
 
 export type RecommendedUser = {
     id: string;

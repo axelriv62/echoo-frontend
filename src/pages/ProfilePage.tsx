@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
-import { getUserProfile } from "../services/api";
+import { getUserProfile } from "../services/users.ts";
 import LogoutButton from "../components/logout-button/LogoutButton.tsx";
 import DeactivateAccountButton from "../components/disable-button/DisableButton.tsx";
 

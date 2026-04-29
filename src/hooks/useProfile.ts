@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react";
-import { getUserProfile, updateUserProfile, getPublicProfileById } from "../services/api";
+import { getUserProfile, updateUserProfile, getPublicProfileById } from "../services/users.ts";
 import type { UpdateUserProfilePayload, User } from "../utils/types";
+import {TOKEN_KEY} from "../utils/constants.ts";
 
-export const useProfile = (token: string | null) => {
+export const useProfile = () => {
     const [profile, setProfile] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [updating, setUpdating] = useState(false);
     const [updateError, setUpdateError] = useState<string | null>(null);
+
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { profile: null, loading: false, error: null, updateProfile: async () => ({ user: null, requiresReauth: false }), updating: false, updateError: null };
+    }
 
     useEffect(() => {
         let isActive = true;

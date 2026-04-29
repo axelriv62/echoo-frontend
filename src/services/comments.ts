@@ -1,5 +1,5 @@
-import { API_URL, TOKEN_KEY } from '../utils/constants';
-import type { Comment } from '../utils/types';
+import { API_URL, TOKEN_KEY } from '../utils/constants.ts';
+import type { Comment } from '../utils/types.ts';
 
 export type CreateCommentPayload = {
     postId: string;

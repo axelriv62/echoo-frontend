@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { TOKEN_KEY, ROLES_KEY, ID_KEY } from "../../utils/constants";
-import {disable} from "../../hooks/auth.ts";
+import {disable} from "../../services/auth.ts";
 
 interface DeactivateAccountButtonProps {
     token: string | null;

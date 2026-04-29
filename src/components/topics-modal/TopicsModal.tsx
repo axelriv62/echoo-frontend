@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getTopic, createTopic, deleteTopic } from '../../hooks/posts';
+import { getTopic, createTopic, deleteTopic } from '../../services/posts.ts';
 import type { Topic } from '../../utils/types';
 import {ROLES_KEY} from "../../utils/constants.ts";
 

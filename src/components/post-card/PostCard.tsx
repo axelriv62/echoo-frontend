@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import type { Post, Comment } from "../../utils/types.ts";
-import { createComment } from "../../hooks/comments";
+import { createComment } from "../../services/comments.ts";
 import CommentCard from "../comment-card/CommentCard";
 import CommentForm from "../comment-form/CommentForm";
 import { ID_KEY } from "../../utils/constants.ts";
-import { dislikePost, getPostLikedStatus, likePost } from "../../services/api";
+import { dislikePost, getPostLikedStatus, likePost } from "../../services/posts";
 import { TOKEN_KEY } from "../../utils/constants";
-import { deletePost } from "../../hooks/posts";
+import { deletePost } from "../../services/posts.ts";
 
 const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Promise<void> }> = ({ post, onDelete }) => {
     const profileImage = post.user.imageProfile || '/src/assets/no-profile-picture.jpg';

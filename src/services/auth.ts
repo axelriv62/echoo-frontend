@@ -1,5 +1,5 @@
-import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY} from '../utils/constants';
-import { getUserProfile } from '../services/api';
+import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY} from '../utils/constants.ts';
+import { getUserProfile } from './users.ts';
 
 // Type to define the shape of the authentication payload for both signin and register functions
 type AuthPayload = {

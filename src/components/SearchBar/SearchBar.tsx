@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { searchPosts, searchUsers, getPostsByUser, getUserProfile } from '../../services/api';
+import { searchUsers, getUserProfile } from '../../services/users.ts';
 import type { Post } from '../../utils/types';
+import {getPostsByUser, searchPosts} from "../../services/posts.ts";
 
 type SearchMode = 'users' | 'posts';
 

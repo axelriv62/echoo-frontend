@@ -1,5 +1,5 @@
 import { useState, type MouseEvent } from "react";
-import { toggleIgnoreUser } from "../../services/api";
+import { toggleIgnoreUser } from "../../services/users.ts";
 
 type IgnoreUserButtonProps = {
     userId: string;

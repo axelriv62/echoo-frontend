@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
 import FollowUserButton from "../components/FollowUserButton/FollowUserButton";
 import IgnoreUserButton from "../components/IgnoreUserButton/IgnoreUserButton";
-import { getMyFollowedUsers, getUserProfile } from "../services/api";
+import { getMyFollowedUsers, getUserProfile } from "../services/users.ts";
 
 interface PublicProfilePageProps {
     token: string | null;

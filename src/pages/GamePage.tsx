@@ -138,7 +138,7 @@ function saveBestScore(songName: string, score: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const GamePage = ({ token }: { token: string | null }) => {
+const GamePage = () => {
     const navigate = useNavigate();
 
     const [songIdx, setSongIdx] = useState(0);
