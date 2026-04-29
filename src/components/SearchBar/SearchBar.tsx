@@ -219,7 +219,7 @@ const SearchBar: React.FC = () => {
 								<div className="min-w-0 flex-1">
 									<p className="text-sm font-medium text-gray-800 truncate">{result.post.title}</p>
 									<p className="text-xs text-gray-500 truncate">
-										Par {result.post.user.username}{result.post.page ? ` · ${result.post.page.name}` : ''}
+										Par {result.post.user.username}{result.post.page?.name ? ` · ${result.post.page.name}` : ''}
 									</p>
 								</div>
 							)}
