@@ -14,7 +14,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { name: 'Accueil', path: '/' },
-    { name: 'Recommandations', path: '/recommendations', requiresAuth: true },
 ];
 
 type NavBarProps = {

@@ -42,7 +42,6 @@ function App({ token, setToken }: { token: string | null; setToken: (token: stri
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/profile" element={<ProfilePage token={token} setToken={setToken} />} />
             <Route path="/user/:userId" element={<PublicProfilePage token={token} setToken={setToken} />} />
-            <Route path="/recommendations" element={<RecommendationsPage token={token} setToken={setToken} />} />
             <Route path="*" element={<ERROR />} />
             <Route path="/game" element={<GamePage />} />
         </Routes>
