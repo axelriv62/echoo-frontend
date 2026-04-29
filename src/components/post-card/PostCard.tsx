@@ -132,10 +132,6 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         }
     };
 
-    const handleCommentDeleted = (commentId: string) => {
-        setComments(comments.filter(c => c.id !== commentId));
-    };
-
     return (
         <>
             <div className="bg-white rounded-lg shadow-md p-6 mb-4">
@@ -236,7 +232,7 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
                                         key={comment.id}
                                         comment={comment}
                                         isReply={!!comment.parentCommentId}
-                                        currentUserId={currentUserId}
+                                        currentUserId={currentUserId ?? undefined}
                                         onReplyClick={setReplyingTo}
                                     />
                                 ))
