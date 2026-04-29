@@ -1,9 +1,77 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Post } from "../../utils/types.ts";
+import { dislikePost, getPostLikedStatus, likePost } from "../../services/api";
+import { TOKEN_KEY } from "../../utils/constants";
 
 const PostCard: React.FC<{ post: Post }> = ({ post }) => {
     const profileImage = post.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isImageOpen, setIsImageOpen] = useState(false);
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(() => post.nbLikes);
+    const [isLoading, setIsLoading] = useState(false);
+    const [isCheckingLike, setIsCheckingLike] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)));
+
+    useEffect(() => {
+        const token = localStorage.getItem(TOKEN_KEY);
+        let isMounted = true;
+
+        if (!token) {
+            return;
+        }
+
+        (async () => {
+            const result = await getPostLikedStatus(post.id, token);
+
+            if (!isMounted) {
+                return;
+            }
+
+            if (result.success) {
+                setIsLiked(result.liked);
+            } else {
+                setIsLiked(false);
+            }
+
+            setIsCheckingLike(false);
+        })();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [post.id]);
+
+    const handleLikeClick = async () => {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) {
+            alert("Vous devez être connecté pour liker un post");
+            return;
+        }
+
+        if (isLoading || isCheckingLike) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            if (isLiked) {
+                const result = await dislikePost(post.id, token);
+                if (result.success) {
+                    setIsLiked(false);
+                    setLikeCount((previousCount) => Math.max(0, previousCount - 1));
+                }
+            } else {
+                const result = await likePost(post.id, token);
+                if (result.success) {
+                    setIsLiked(true);
+                    setLikeCount((previousCount) => previousCount + 1);
+                }
+            }
+        } catch (error) {
+            console.error("Erreur lors de la gestion du like:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <>
@@ -47,6 +115,21 @@ const PostCard: React.FC<{ post: Post }> = ({ post }) => {
                                 {topic.name}
                             </span>
                         ))}
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handleLikeClick}
+                            disabled={isLoading || isCheckingLike}
+                            aria-label={isLiked ? "Retirer la réaction" : "Réagir au post"}
+                            className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-semibold transition ${
+                                isLiked
+                                    ? "border-[#a237ff] bg-[#a237ff]/10 text-[#a237ff] hover:bg-[#a237ff]/15"
+                                    : "border-[#e5e7eb] bg-white text-[#000000] hover:border-[#a237ff] hover:bg-[#a237ff]/5 hover:text-[#a237ff]"
+                            } ${(isLoading || isCheckingLike) ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                            <span className="text-base leading-none">{isLiked ? "💜" : "🤍"}</span>
+                            <span>{likeCount}</span>
+                        </button>
                     </div>
                 </div>
             </div>
