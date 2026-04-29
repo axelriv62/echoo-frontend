@@ -343,7 +343,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                             id={`post-${post.id}`}
                             className={highlightPostId === post.id ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
                         >
-                            <PostCard post={post} />
+                            <PostCard post={post} onDelete={handlePostDeleted} />
                         </div>
                     ))}
                 </div>
