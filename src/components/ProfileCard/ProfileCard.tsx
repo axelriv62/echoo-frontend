@@ -11,7 +11,7 @@ type ProfileCardProps = {
     profile: User | null;
     loading: boolean;
     error: string | null;
-    onUpdate: (payload: UpdateUserProfilePayload) => Promise<User | null>;
+    onUpdate?: (payload: UpdateUserProfilePayload) => Promise<User | null>;
     updating: boolean;
     updateError: string | null;
 };
@@ -48,7 +48,7 @@ const ProfileCard = ({ profile, loading, error, onUpdate, updating, updateError 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!profile || !draft) {
+        if (!profile || !draft || typeof onUpdate !== "function") {
             return;
         }
 
@@ -72,7 +72,7 @@ const ProfileCard = ({ profile, loading, error, onUpdate, updating, updateError 
 
     return (
         <div className="relative w-full max-w-md rounded-2xl bg-white/80 p-4 text-left shadow-lg">
-            {profile && !loading && !error && !isEditing && (
+            {profile && !loading && !error && !isEditing && typeof onUpdate === "function" && (
                 <button
                     type="button"
                     onClick={startEditing}
