@@ -1,12 +1,24 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { searchUsers } from '../../services/api';
+import { searchPosts, searchUsers } from '../../services/api';
 import { TOKEN_KEY } from '../../utils/constants';
+import type { Post } from '../../utils/types';
 
-type SearchResult = {
+type SearchMode = 'users' | 'posts';
+
+type UserSearchResult = {
 	id: string;
 	username: string;
 	imageProfile: string | null;
+};
+
+type SearchResult =
+	| { type: 'user'; user: UserSearchResult }
+	| { type: 'post'; post: Pick<Post, 'id' | 'title' | 'user' | 'page'> };
+
+const modeLabels: Record<SearchMode, string> = {
+	users: 'Utilisateurs',
+	posts: 'Posts',
 };
 
 const SearchBar: React.FC = () => {
@@ -14,30 +26,86 @@ const SearchBar: React.FC = () => {
 	const [results, setResults] = useState<SearchResult[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showResults, setShowResults] = useState(false);
+	const [mode, setMode] = useState<SearchMode>('users');
+	const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
 	const searchRef = useRef<HTMLDivElement>(null);
+	const modeMenuRef = useRef<HTMLDivElement>(null);
 	const navigate = useNavigate();
 
-	const handleSearch = async (searchQuery: string) => {
-		setQuery(searchQuery);
+	useEffect(() => {
+		let isActive = true;
+		const trimmedQuery = query.trim();
 
-		if (!searchQuery.trim()) {
-			setResults([]);
-			setShowResults(false);
-			return;
+		if (!trimmedQuery) {
+			Promise.resolve().then(() => {
+				if (!isActive) {
+					return;
+				}
+				setResults([]);
+				setIsLoading(false);
+				setShowResults(false);
+			});
+			return () => {
+				isActive = false;
+			};
 		}
 
 		setIsLoading(true);
-		const token = localStorage.getItem(TOKEN_KEY);
-		const result = await searchUsers(searchQuery, token);
 
-		if (result.success) {
-			setResults(result.users);
-			setShowResults(true);
-		} else {
-			setResults([]);
-			setShowResults(false);
-		}
-		setIsLoading(false);
+		const runSearch = async () => {
+			if (mode === 'users') {
+				const token = localStorage.getItem(TOKEN_KEY);
+				const result = await searchUsers(trimmedQuery, token);
+
+				if (!isActive) {
+					return;
+				}
+
+				if (result.success) {
+					setResults(result.users.map((user) => ({ type: 'user', user })));
+					setShowResults(true);
+				} else {
+					setResults([]);
+					setShowResults(false);
+				}
+				setIsLoading(false);
+				return;
+			}
+
+			const token = localStorage.getItem(TOKEN_KEY);
+			const postsResult = await searchPosts(trimmedQuery, token);
+
+			if (!isActive) {
+				return;
+			}
+
+			if (postsResult.success) {
+				setResults(postsResult.posts.map((post) => ({ type: 'post', post: {
+					id: post.id,
+					title: post.title,
+					user: post.user,
+					page: post.page,
+				} })));
+				setShowResults(true);
+			} else {
+				setResults([]);
+				setShowResults(false);
+			}
+			setIsLoading(false);
+		};
+
+		void runSearch();
+
+		return () => {
+			isActive = false;
+		};
+	}, [query, mode]);
+
+	const handleModeChange = (nextMode: SearchMode) => {
+		setMode(nextMode);
+		setIsModeMenuOpen(false);
+		setResults([]);
+		setShowResults(Boolean(query.trim()));
 	};
 
 	const handleUserClick = (userId: string) => {
@@ -47,10 +115,21 @@ const SearchBar: React.FC = () => {
 		setShowResults(false);
 	};
 
+	const handlePostClick = (postId: string) => {
+		navigate('/', { state: { highlightPostId: postId } });
+		setQuery('');
+		setResults([]);
+		setShowResults(false);
+	};
+
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+			const target = event.target as Node;
+			if (searchRef.current && !searchRef.current.contains(target)) {
 				setShowResults(false);
+			}
+			if (modeMenuRef.current && !modeMenuRef.current.contains(target)) {
+				setIsModeMenuOpen(false);
 			}
 		};
 
@@ -59,42 +138,90 @@ const SearchBar: React.FC = () => {
 	}, []);
 
 	return (
-		<div ref={searchRef} className="relative w-full max-w-sm">
-			<div className="relative flex items-center">
-				<input
-					type="text"
-					placeholder="Rechercher un utilisateur..."
-					value={query}
-					onChange={(e) => handleSearch(e.target.value)}
-					onFocus={() => query && setShowResults(true)}
-					className="w-full px-3 py-2 text-sm border border-[#a237ff]/30 rounded-lg bg-white/95 text-gray-800 placeholder-gray-500 outline-none transition focus:border-[#a237ff] focus:bg-white focus:shadow-[0_0_0_2px_rgba(162,55,255,0.1)]"
-				/>
-				{isLoading && <span className="absolute right-3 text-[#a237ff] font-bold">...</span>}
+		<div ref={searchRef} className="relative w-full max-w-md">
+			<div className="relative flex items-stretch">
+				<div ref={modeMenuRef} className="relative shrink-0">
+					<button
+						type="button"
+						onClick={() => setIsModeMenuOpen((value) => !value)}
+						className="flex h-full items-center gap-2 rounded-l-lg border border-r-0 border-[#a237ff]/30 bg-white/95 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-[#a237ff]/5 hover:text-[#a237ff] focus:outline-none focus:ring-2 focus:ring-[#a237ff]/20"
+						aria-haspopup="menu"
+						aria-expanded={isModeMenuOpen}
+					>
+						<span>{modeLabels[mode]}</span>
+						<span className="text-xs text-gray-400">▾</span>
+					</button>
+
+					{isModeMenuOpen && (
+						<div className="absolute left-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-lg border border-[#a237ff]/20 bg-white shadow-lg">
+							{(Object.keys(modeLabels) as SearchMode[]).map((value) => (
+								<button
+									key={value}
+									type="button"
+									onClick={() => handleModeChange(value)}
+									className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm transition ${mode === value
+										? 'bg-[#a237ff]/10 font-semibold text-[#a237ff]'
+										: 'text-gray-700 hover:bg-[#a237ff]/5 hover:text-[#a237ff]'
+									}`}
+								>
+									<span>{modeLabels[value]}</span>
+									{mode === value && <span className="text-xs">✓</span>}
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+
+				<div className="relative flex-1 items-center">
+					<input
+						type="text"
+						placeholder={mode === 'users' ? 'Rechercher un utilisateur...' : 'Rechercher un post par titre...'}
+						value={query}
+						onChange={(e) => setQuery(e.target.value)}
+						onFocus={() => query && setShowResults(true)}
+						className="w-full rounded-r-lg border border-[#a237ff]/30 border-l-0 bg-white/95 px-3 py-2 text-sm text-gray-800 placeholder-gray-500 outline-none transition focus:border-[#a237ff] focus:bg-white focus:shadow-[0_0_0_2px_rgba(162,55,255,0.1)]"
+					/>
+					{isLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#a237ff] font-bold">...</span>}
+				</div>
 			</div>
 
 			{showResults && results.length > 0 && (
 				<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#a237ff]/20 rounded-lg shadow-lg max-h-80 overflow-y-auto z-50">
-					{results.map((user) => (
+					{results.map((result) => (
 						<button
-							key={user.id}
+							key={result.type === 'user' ? result.user.id : result.post.id}
 							type="button"
-							onClick={() => handleUserClick(user.id)}
+							onClick={() => result.type === 'user' ? handleUserClick(result.user.id) : handlePostClick(result.post.id)}
 							className="flex items-center gap-3 w-full px-3 py-2.5 hover:bg-[#a237ff]/5 active:bg-[#a237ff]/10 transition text-left border-b border-[#a237ff]/5 last:border-b-0"
 						>
-							<div className="shrink-0 w-8 h-8 rounded-full bg-[#a237ff]/10 flex items-center justify-center overflow-hidden">
-								{user.imageProfile ? (
-									<img
-										src={user.imageProfile}
-										alt={user.username}
-										className="w-full h-full object-cover"
-									/>
-								) : (
-									<span className="text-xs font-semibold text-[#a237ff]">
-										{user.username.slice(0, 1).toUpperCase()}
-									</span>
-								)}
-							</div>
-							<span className="text-sm font-medium text-gray-800 truncate">{user.username}</span>
+							{result.type === 'user' ? (
+								<>
+									<div className="shrink-0 w-8 h-8 rounded-full bg-[#a237ff]/10 flex items-center justify-center overflow-hidden">
+										{result.user.imageProfile ? (
+											<img
+												src={result.user.imageProfile}
+												alt={result.user.username}
+												className="w-full h-full object-cover"
+											/>
+										) : (
+											<span className="text-xs font-semibold text-[#a237ff]">
+												{result.user.username.slice(0, 1).toUpperCase()}
+											</span>
+										)}
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="text-sm font-medium text-gray-800 truncate">{result.user.username}</p>
+										<p className="text-xs text-gray-500">Utilisateur</p>
+									</div>
+								</>
+							) : (
+								<div className="min-w-0 flex-1">
+									<p className="text-sm font-medium text-gray-800 truncate">{result.post.title}</p>
+									<p className="text-xs text-gray-500 truncate">
+										Par {result.post.user.username}{result.post.page ? ` · ${result.post.page.name}` : ''}
+									</p>
+								</div>
+							)}
 						</button>
 					))}
 				</div>
@@ -102,7 +229,7 @@ const SearchBar: React.FC = () => {
 
 			{showResults && query.trim() && results.length === 0 && !isLoading && (
 				<div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#a237ff]/20 rounded-lg shadow-lg p-3 text-center text-sm text-gray-500 z-50">
-					Aucun utilisateur trouvé
+					{mode === 'users' ? 'Aucun utilisateur trouvé' : 'Aucun post trouvé'}
 				</div>
 			)}
 		</div>
