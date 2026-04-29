@@ -1,10 +1,25 @@
 import { useNavigate } from "react-router";
 import { useProfile } from "../hooks/useProfile";
 import ProfileCard from "../components/ProfileCard/ProfileCard";
+import { ROLES_KEY, TOKEN_KEY } from "../utils/constants";
 
-const ProfilePage = ({ token }: { token: string | null }) => {
+const ProfilePage = ({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
-    const { profile, loading, error } = useProfile(token);
+    const { profile, loading, error, updateProfile, updating, updateError } = useProfile(token);
+
+    const handleUpdateProfile = async (payload: Parameters<typeof updateProfile>[0]) => {
+        const result = await updateProfile(payload);
+
+        if (result.requiresReauth) {
+            localStorage.removeItem(TOKEN_KEY);
+            localStorage.removeItem(ROLES_KEY);
+            setToken(null);
+            navigate("/login", { state: { message: "Votre nom d'utilisateur a changé, reconnectez-vous." } });
+            return null;
+        }
+
+        return result.user;
+    };
 
     if (!token) {
         return (
@@ -26,7 +41,14 @@ const ProfilePage = ({ token }: { token: string | null }) => {
         <div className="min-h-screen bg-white">
             <div className="max-w-2xl mx-auto border-l border-r border-gray-200 min-h-screen p-4">
                 <div className="flex justify-center">
-                    <ProfileCard profile={profile} loading={loading} error={error} />
+                    <ProfileCard
+                        profile={profile}
+                        loading={loading}
+                        error={error}
+                        onUpdate={handleUpdateProfile}
+                        updating={updating}
+                        updateError={updateError}
+                    />
                 </div>
             </div>
         </div>
