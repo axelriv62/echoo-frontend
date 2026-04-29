@@ -302,6 +302,43 @@ export const searchPosts = async (
     }
 };
 
+export const getPostsByUser = async (
+    userId: string,
+    token: string | null = null
+): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    try {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${API_URL}/posts/user/${encodeURIComponent(userId)}`, {
+            method: "GET",
+            headers,
+        });
+
+        if (!response.ok) {
+            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
+        }
+
+        const data = await response.json();
+        const posts = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.content)
+                ? data.content
+                : Array.isArray(data?.posts)
+                    ? data.posts
+                    : [];
+
+        return { success: true, message: "Posts par utilisateur trouvés", posts };
+    } catch {
+        return { success: false, message: "Erreur lors de la récupération des posts par utilisateur", posts: [] };
+    }
+};
+
 
 export const likePost = async (
     postId: string,
