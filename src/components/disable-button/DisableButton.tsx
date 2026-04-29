@@ -57,7 +57,7 @@ const DeactivateAccountButton = ({ token, setToken }: DeactivateAccountButtonPro
                     >
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Désactiver votre compte ?</h3>
                         <p className="text-sm text-gray-600 mb-6">
-                            Cette action désactivera votre compte. Vous pourrez le réactiver ultérieurement.
+                            Cette action désactivera votre compte. Cette action est irréversible.
                         </p>
                         <div className="flex justify-end gap-3">
                             <button

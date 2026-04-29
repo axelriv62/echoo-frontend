@@ -1,6 +1,11 @@
 import {API_URL, TOKEN_KEY} from "../utils/constants";
 import type { UpdateUserProfilePayload, User } from "../utils/types";
 
+/**
+ * Fetches the profile of the currently authenticated user from the API.
+ * @returns A promise that resolves to the user's profile data.
+ * @throws An error if the user is not authenticated or if there is an issue with the API request.
+ */
 export const getUserProfile = async (): Promise<User> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {

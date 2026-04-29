@@ -1,5 +1,5 @@
 import { API_URL, TOKEN_KEY } from '../utils/constants.ts';
-import type { Post, Topic } from "../utils/types.ts";
+import type { Post } from "../utils/types.ts";
 
 export type CreatePostPayload = {
     title: string;
@@ -9,6 +9,45 @@ export type CreatePostPayload = {
     topicsIds?: string[];
 };
 
+/**
+ * Retrieve all posts by sending a GET request to the API. The function checks for a valid authentication token before making the request and returns an object containing the success status, an array of posts if successful, and a message to be displayed to the user.
+ * @returns An object containing the success status, an array of posts if successful, and a message to be displayed to the user.
+ */
+export const getPosts = async (): Promise<{ success: boolean; posts?: Post[], message: string }> => {
+    try {
+        const token = localStorage.getItem(TOKEN_KEY);
+
+        if (!token) {
+            return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter" };
+        }
+
+        const response = await fetch(`${API_URL}/posts`, {
+            method: "GET",
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            return { success: false, message: "Erreur lors de la récupération des posts, veuillez réessayer" };
+        }
+
+        const data = await response.json();
+
+        return { success: true, posts: data.content, message: "Posts récupérés avec succès" };
+    } catch {
+        return { success: false, message: "Erreur de lors de la récupération des posts, veuillez réessayer" };
+    }
+}
+
+/**
+ * Create a new post by sending a POST request to the API with the provided payload.
+ * The payload includes the title, description, optional pageId, optional urlImage, and optional array of topic IDs.
+ * The function checks for a valid authentication token before making the request and returns an object indicating the success status and a message to be displayed to the user.
+ * @param payload - An object containing the title, description, optional pageId, optional urlImage, and optional array of topic IDs for the new post
+ * @returns An object containing the success status and a message to be displayed to the user
+ */
 export const createPost = async (payload: CreatePostPayload): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
 
@@ -53,171 +92,11 @@ export const createPost = async (payload: CreatePostPayload): Promise<{ success:
     }
 };
 
-export const getPosts = async (): Promise<{ success: boolean; posts?: Post[], message: string }> => {
-    try {
-        const token = localStorage.getItem(TOKEN_KEY);
-
-        if (!token) {
-            return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter" };
-        }
-
-        const response = await fetch(`${API_URL}/posts`, {
-            method: "GET",
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            return { success: false, message: "Erreur lors de la récupération des posts, veuillez réessayer" };
-        }
-
-        const data = await response.json();
-
-        return { success: true, posts: data.content, message: "Posts récupérés avec succès" };
-    } catch {
-        return { success: false, message: "Erreur de lors de la récupération des posts, veuillez réessayer" };
-    }
-};
-
-export const getRecommendedPosts = async (
-    limit = 1
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter", posts: [] };
-    }
-
-    try {
-        const url = new URL(`${API_URL}/recommendation/posts`);
-        if (Number.isFinite(limit) && limit > 0) {
-            url.searchParams.set("limit", String(Math.floor(limit)));
-        }
-
-        const response = await fetch(url.toString(), {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (response.status === 401) {
-            return { success: false, message: "Unauthorized: Authentication required to get personalized feed", posts: [] };
-        }
-
-        if (!response.ok) {
-            if (response.status === 404) {
-                return { success: true, message: "Aucune suggestion disponible pour le moment", posts: [] };
-            }
-
-            return { success: false, message: "Erreur lors de la récupération des posts suggérés", posts: [] };
-        }
-
-        const data = await response.json();
-        const recommendedPosts = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.content)
-                ? data.content
-                : Array.isArray(data?.posts)
-                    ? data.posts
-                    : Array.isArray(data?.recommendedPosts)
-                        ? data.recommendedPosts
-                        : [];
-
-        const posts = recommendedPosts.filter((post: Post | null | undefined) => Boolean(post?.id && post?.user));
-
-        return { success: true, message: "Posts suggérés trouvés avec succès", posts };
-    } catch {
-        return { success: false, message: "Erreur lors de la suggestion des posts, veuillez réessayer", posts: [] };
-    }
-};
-
-export const createTopic = async (topicName: string): Promise<{ success: boolean; message: string }> => {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-        return { success: false, message: "Vous devez être connecté" };
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/topics`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name: topicName }),
-        });
-
-        if (!response.ok) {
-            return { success: false, message: "Erreur lors de la création du topic" };
-        }
-
-        return { success: true, message: "Topic créé avec succès !" };
-    } catch {
-        return { success: false, message: "Erreur lors de la création du topic, veuillez réessayer" };
-    }
-};
-
-export const getTopic = async (): Promise<{ success: boolean; topics: Topic[]; message: string }> => {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-        return { success: false, topics: [], message: "Vous devez être connecté" };
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/topics`, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            return { success: false, topics: [], message: "Erreur lors de la récupération des topics" };
-        }
-
-        const data = await response.json();
-
-        return {
-            success: true,
-            topics: Array.isArray(data) ? data : [],
-            message: "Topics récupérés avec succès"
-        };
-    } catch {
-        return { success: false, topics: [], message: "Erreur lors de la récupération des topics, veuillez réessayer" };
-    }
-};
-
-export const deleteTopic = async (topicId: string): Promise<{ success: boolean; message: string }> => {
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    if (!token) {
-        return { success: false, message: "Vous devez être connecté" };
-    }
-
-    try {
-        const response = await fetch(`${API_URL}/topics/${topicId}`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            return { success: false, message: "Erreur lors de la suppression du topic" };
-        }
-
-        return { success: true, message: "Topic supprimé avec succès !" };
-    } catch {
-        return { success: false, message: "Erreur lors de la suppression du topic, veuillez réessayer" };
-    }
-};
-
+/**
+ * Delete a post by sending a DELETE request to the API with the provided post ID. The function checks for a valid authentication token before making the request and returns an object indicating the success status and a message to be displayed to the user.
+ * @param postId - The ID of the post to be deleted
+ * @returns An object containing the success status and a message to be displayed to the user
+ */
 export const deletePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -252,6 +131,11 @@ export const deletePost = async (postId: string): Promise<{ success: boolean; me
     }
 };
 
+/**
+ * Search for posts by sending a GET request to the API with the provided query string. The function checks for a valid authentication token before making the request and returns an object containing the success status, an array of matching posts if successful, and a message to be displayed to the user.
+ * @param query - The search query string to find matching posts
+ * @returns An object containing the success status, an array of matching posts if successful, and a message to be displayed to the user
+ */
 export const searchPosts = async (query: string): Promise<{ success: boolean; message: string; posts: Post[] }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -295,6 +179,11 @@ export const searchPosts = async (query: string): Promise<{ success: boolean; me
     }
 };
 
+/**
+ * Retrieve posts created by a specific user by sending a GET request to the API with the provided user ID. The function checks for a valid authentication token before making the request and returns an object containing the success status, an array of posts created by the specified user if successful, and a message to be displayed to the user.
+ * @param userId - The ID of the user whose posts are to be retrieved
+ * @returns An object containing the success status, an array of posts created by the specified user if successful, and a message to be displayed to the user
+ */
 export const getPostsByUser = async (userId: string): Promise<{ success: boolean; message: string; posts: Post[] }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -334,7 +223,11 @@ export const getPostsByUser = async (userId: string): Promise<{ success: boolean
     }
 };
 
-
+/**
+ * Like a post by sending a POST request to the API with the provided post ID. The function checks for a valid authentication token before making the request and returns an object indicating the success status and a message to be displayed to the user.
+ * @param postId - The ID of the post to be liked
+ * @returns An object containing the success status and a message to be displayed to the user
+ */
 export const likePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -374,6 +267,11 @@ export const likePost = async (postId: string): Promise<{ success: boolean; mess
     }
 };
 
+/**
+ * Remove a like from a post by sending a DELETE request to the API with the provided post ID. The function checks for a valid authentication token before making the request and returns an object indicating the success status and a message to be displayed to the user.
+ * @param postId - The ID of the post from which the like is to be removed
+ * @returns An object containing the success status and a message to be displayed to the user
+ */
 export const dislikePost = async (postId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -408,6 +306,11 @@ export const dislikePost = async (postId: string): Promise<{ success: boolean; m
     }
 };
 
+/**
+ * Retrieve the liked status of a post for the authenticated user by sending a GET request to the API with the provided post ID. The function checks for a valid authentication token before making the request and returns an object containing the success status, a message to be displayed to the user, and a boolean indicating whether the post is liked by the user.
+ * @param postId - The ID of the post for which to check the liked status
+ * @returns An object containing the success status, a message to be displayed to the user, and a boolean indicating whether the post is liked by the user
+ */
 export const getPostLikedStatus = async (postId: string): Promise<{ success: boolean; message: string; liked: boolean }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {

@@ -1,6 +1,7 @@
 import {useState, useEffect, useCallback, useRef} from "react";
 import { useLocation, useNavigate } from "react-router";
-import { getPosts, getTopic, createPost, type CreatePostPayload } from "../services/posts.ts";
+import { getPosts, createPost, type CreatePostPayload } from "../services/posts.ts";
+import { getTopics } from "../services/topics.ts";
 import { getUserProfile } from "../services/users.ts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
@@ -72,7 +73,7 @@ const HomePage = () => {
     }, [highlightPostId, posts]);
 
     const loadTopics = async () => {
-        const result = await getTopic();
+        const result = await getTopics();
         if (result.success) {
             setTopics(result.topics);
         }
@@ -118,7 +119,7 @@ const HomePage = () => {
                 }
 
                 // load topics as well
-                const topicsResult = await getTopic();
+                const topicsResult = await getTopics();
                 if (isMounted && topicsResult.success) {
                     setTopics(topicsResult.topics);
                 }

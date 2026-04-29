@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import PostCard from "../post-card/PostCard";
-import { getRecommendedPosts } from "../../services/posts.ts";
+import { getRecommendedPosts } from "../../services/recommendations";
 import { TOKEN_KEY } from "../../utils/constants";
 import type { Post } from "../../utils/types";
 

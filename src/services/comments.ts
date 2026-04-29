@@ -7,6 +7,11 @@ export type CreateCommentPayload = {
     content: string;
 };
 
+/**
+ * Create a new comment by sending a POST request to the API with the provided payload.
+ * @param payload - An object containing the postId, optional parentCommentId, and content of the comment to be created
+ * @returns An object containing the success status, the created comment (if successful), and a message.
+ */
 export const createComment = async (
     payload: CreateCommentPayload
 ): Promise<{ success: boolean; comment?: Comment; message: string }> => {
@@ -54,6 +59,11 @@ export const createComment = async (
     }
 };
 
+/**
+ * Delete a comment by sending a DELETE request to the API with the provided comment ID.
+ * @param commentId - The ID of the comment to be deleted
+ * @returns An object containing the success status and a message.
+ */
 export const deleteComment = async (
     commentId: string
 ): Promise<{ success: boolean; message: string }> => {
