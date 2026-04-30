@@ -2,12 +2,22 @@ import { useCallback, useEffect, useState } from "react";
 import { getFollowers } from "../../services/users";
 import type { FollowedUser } from "../../utils/types";
 
+/**
+ * Props for the FollowersModal component.
+ */
 type FollowersModalProps = {
     userId: string;
     isOpen: boolean;
     onClose: () => void;
 };
 
+/**
+ * FollowersModal
+ *
+ * Modal that lists followers for a given user with simple pagination.
+ * It fetches pages of followers from the backend when opened and allows
+ * navigating between pages. Displays loading and error states.
+ */
 const FollowersModal = ({ userId, isOpen, onClose }: FollowersModalProps) => {
     const [followers, setFollowers] = useState<FollowedUser[]>([]);
     const [loading, setLoading] = useState(false);
@@ -16,6 +26,9 @@ const FollowersModal = ({ userId, isOpen, onClose }: FollowersModalProps) => {
     const [totalPages, setTotalPages] = useState(0);
     const pageSize = 10;
 
+    /**
+     * Fetch a page of followers. If reset is true, clear previous data.
+     */
     const fetchFollowers = useCallback(async (page: number, reset = false) => {
         if (reset) {
             setFollowers([]);
@@ -45,6 +58,7 @@ const FollowersModal = ({ userId, isOpen, onClose }: FollowersModalProps) => {
             return;
         }
 
+        // Load first page when modal opens
         void fetchFollowers(0, true);
     }, [isOpen, fetchFollowers]);
 

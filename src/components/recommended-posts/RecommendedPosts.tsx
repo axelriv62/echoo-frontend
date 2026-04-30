@@ -1,3 +1,9 @@
+// RecommendedPosts component
+// --------------------------
+// Fetches and displays a (small) list of post recommendations. The
+// component shows a loading state while recommendations are retrieved and
+// provides an onDelete handler to remove posts from the local list when a
+// post is deleted.
 import { useEffect, useState } from "react";
 import PostCard from "../post-card/PostCard";
 import { getRecommendedPosts } from "../../services/recommendations";
@@ -14,6 +20,8 @@ const RecommendedPosts = ({ limit = 1 }: RecommendedPostsProps) => {
     const [message, setMessage] = useState("");
     const token = localStorage.getItem(TOKEN_KEY);
 
+    // Load recommended posts from the backend when the component mounts or
+    // when the provided limit or authentication token changes.
     useEffect(() => {
         let isMounted = true;
 
@@ -36,6 +44,9 @@ const RecommendedPosts = ({ limit = 1 }: RecommendedPostsProps) => {
         };
     }, [limit, token]);
 
+    // Remove a deleted post from the local posts array. This is passed down
+    // to individual PostCard instances so they can notify this parent when
+    // they successfully delete a post.
     const handlePostDeleted = (postId: string) => {
         setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
     };

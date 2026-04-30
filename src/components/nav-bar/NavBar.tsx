@@ -2,7 +2,7 @@ import React from "react";
 import { AppBar, Toolbar, Box, Button } from '@mui/material';
 import { useNavigate } from "react-router";
 import logo from "../../assets/logo.png";
-import SearchBar from "../SearchBar/SearchBar";
+import SearchBar from "../search-bar/SearchBar";
 import {USERNAME_KEY} from "../../utils/constants.ts";
 
 /**
@@ -10,6 +10,8 @@ import {USERNAME_KEY} from "../../utils/constants.ts";
  */
 const NavBar: React.FC = () => {
     const navigate = useNavigate();
+    // Read the logged-in username from localStorage (set at login).
+    // If absent, username will be null and the button will render an empty label.
     const username = localStorage.getItem(USERNAME_KEY);
 
     const handleLogoClick = () => {

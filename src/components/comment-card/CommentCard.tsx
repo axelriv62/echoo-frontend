@@ -2,6 +2,9 @@ import { useState } from "react";
 import type { Comment } from "../../utils/types";
 import { deleteComment } from "../../services/comments.ts";
 
+/**
+ * Props for the CommentCard component.
+ */
 interface CommentCardProps {
     comment: Comment;
     isReply?: boolean;
@@ -10,6 +13,15 @@ interface CommentCardProps {
     onCommentDeleted?: (commentId: string, comment: Comment) => void;
 }
 
+/**
+ * CommentCard
+ *
+ * Renders a single comment, optionally indented for replies. If the current
+ * user is the author, a delete button is shown which opens a confirmation
+ * dialog and calls the API to remove the comment. After deletion the comment
+ * content is replaced with an empty string and the optional
+ * onCommentDeleted callback is invoked so the parent can update its state.
+ */
 const CommentCard: React.FC<CommentCardProps> = ({
                                                      comment,
                                                      isReply = false,
@@ -17,25 +29,33 @@ const CommentCard: React.FC<CommentCardProps> = ({
                                                      onReplyClick,
                                                      onCommentDeleted,
                                                  }) => {
+    // Use provided profile image or fallback to a bundled placeholder
     const profileImage = comment.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    // Local copy of the comment so we can clear content after deletion
     const [deletedComment, setDeletedComment] = useState(comment);
 
     const isAuthor = currentUserId === comment.user.id;
+    // Consider comment deleted when its content is empty
     const isDeleted = !deletedComment.content || deletedComment.content.trim() === '';
 
+    /**
+     * Call API to delete the comment. On success, clear the content locally
+     * and notify the parent via onCommentDeleted.
+     */
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
             const result = await deleteComment(deletedComment.id);
             if (result.success) {
-                // Mettre à jour le commentaire avec un contenu vide
+                // Update local copy to reflect deletion (empty content)
                 const updatedComment = { ...deletedComment, content: '' };
                 setDeletedComment(updatedComment);
                 onCommentDeleted?.(deletedComment.id, updatedComment);
                 setShowDeleteConfirm(false);
             } else {
+                // Basic user-visible error; could be replaced with a toast
                 alert(result.message);
             }
         } finally {
@@ -50,6 +70,7 @@ const CommentCard: React.FC<CommentCardProps> = ({
                 alt={deletedComment.user.username}
                 className="w-8 h-8 rounded-full object-cover bg-gray-200 flex-shrink-0"
                 onError={(e) => {
+                    // Fallback image if the src fails to load
                     (e.target as HTMLImageElement).src = '/no-profile-picture.jpg';
                 }}
             />
