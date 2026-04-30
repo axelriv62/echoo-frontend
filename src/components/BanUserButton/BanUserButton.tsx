@@ -1,5 +1,5 @@
 import { useState, useEffect, type MouseEvent } from "react";
-import { banUser } from "../../services/users.ts";
+import { banUser, unbanUser } from "../../services/users.ts";
 
 type BanUserButtonProps = {
     userId: string;
@@ -29,27 +29,27 @@ const BanUserButton = ({
         setIsBanned(initialIsBanned);
     }, [initialIsBanned]);
 
-    const handleBan = async (event: MouseEvent<HTMLButtonElement>) => {
+    const handleBanToggle = async (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
 
-        if (isLoading || isBanned) {
+        if (isLoading) {
             return;
         }
 
         setIsLoading(true);
         setError(null);
 
-        const payload = {
-            userId,
-            reason,
-            bannedAt: bannedAt ?? new Date().toISOString(),
-            unbannedAt,
-        };
-
-        const result = await banUser(payload);
+        const result = isBanned
+            ? await unbanUser({ userId })
+            : await banUser({
+                userId,
+                reason,
+                bannedAt: bannedAt ?? new Date().toISOString(),
+                unbannedAt,
+            });
 
         if (result.success) {
-            setIsBanned(true);
+            setIsBanned((previous) => !previous);
             if (onBanSuccess) {
                 await onBanSuccess();
             }
@@ -70,11 +70,11 @@ const BanUserButton = ({
         <div className="mt-2 w-full" onClick={(event) => event.stopPropagation()}>
             <button
                 type="button"
-                onClick={handleBan}
-                disabled={isLoading || isBanned}
-                className={className ?? `w-full rounded-full text-xs font-semibold py-1.5 px-3 transition ${isBanned ? "bg-[#ef4444]/10 text-[#ef4444]" : "bg-white border border-[#e5e7eb] text-[#6b7280] hover:border-[#ef4444] hover:text-[#ef4444]"} disabled:opacity-60 disabled:cursor-not-allowed`}
+                onClick={handleBanToggle}
+                disabled={isLoading}
+                className={className ?? `w-full rounded-full text-xs font-semibold py-1.5 px-3 transition ${isBanned ? "bg-[#ef4444]/10 text-[#ef4444] hover:bg-[#ef4444]/20" : "bg-white border border-[#e5e7eb] text-[#6b7280] hover:border-[#ef4444] hover:text-[#ef4444]"} disabled:opacity-60 disabled:cursor-not-allowed`}
             >
-                {isLoading ? "Mise a jour..." : isBanned ? "Banni" : "Bannir"}
+                {isLoading ? "Mise a jour..." : isBanned ? "Debannir" : "Bannir"}
             </button>
             {error && <p className="mt-1 text-[11px] text-[#ef4444]">{error}</p>}
         </div>
