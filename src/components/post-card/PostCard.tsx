@@ -7,9 +7,9 @@ import { ID_KEY } from "../../utils/constants.ts";
 import { dislikePost, getPostLikedStatus, likePost } from "../../services/posts";
 import { TOKEN_KEY } from "../../utils/constants";
 import { deletePost } from "../../services/posts.ts";
+import {getImageUrl} from "../../services/images.ts";
 
 const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Promise<void> }> = ({ post, onDelete }) => {
-    const profileImage = post.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isImageOpen, setIsImageOpen] = useState(false);
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments] = useState<Comment[]>(post.comments || []);
@@ -22,13 +22,15 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     const [isCheckingLike, setIsCheckingLike] = useState(() => Boolean(localStorage.getItem(TOKEN_KEY)));
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const canDelete = currentUserId === post.user.id;
+    const [profileImage, setProfileImage] = useState<string>('/src/assets/no-profile-picture.jpg');
+    const [postImage, setPostImage] = useState<string | null>(null);
 
     // Récupérer l'ID utilisateur actuel
     useEffect(() => {
         const userId = localStorage.getItem(ID_KEY);
         let isMounted = true;
 
-        if (userId) {
+        if (isMounted && userId) {
             setCurrentUserId(userId);
         }
 
@@ -48,10 +50,37 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
             setIsCheckingLike(false);
         })();
 
+        // Get profile image from the path in the post data
+        const loadProfileImage = async () => {
+            if (post.user.imageProfile) {
+                try {
+                    const url = await getImageUrl(post.user.imageProfile);
+                    setProfileImage(url);
+                } catch {
+                    setProfileImage('/src/assets/no-profile-picture.jpg');
+                }
+            }
+        };
+
+        // Get post image from the path in the post data
+        const loadPostImage = async () => {
+            if (post.urlImage) {
+                try {
+                    const url = await getImageUrl(post.urlImage);
+                    setPostImage(url);
+                } catch {
+                    setPostImage(null);
+                }
+            }
+        };
+
+        loadPostImage();
+        loadProfileImage();
+
         return () => {
             isMounted = false;
         };
-    }, [post.id]);
+    }, [post.id, post.user.imageProfile, post.urlImage]);
 
     const handleDeletePost = async () => {
         setIsLoading(true);
@@ -125,9 +154,6 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
                         src={profileImage}
                         alt={post.user.username}
                         className="h-10 w-10 rounded-full border-2 border-[#a237ff]/20 object-cover bg-gray-200"
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/no-profile-picture.jpg';
-                        }}
                     />
                     <span className="rounded-full bg-[#a237ff]/10 px-2.5 py-1 text-sm font-semibold text-[#7a22bf]">{post.user.username}</span>
                 </div>
@@ -141,7 +167,7 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
                         onClick={() => setIsImageOpen(true)}
                     >
                         <img
-                            src={post.urlImage}
+                            src={postImage}
                             alt={post.title}
                             className="w-full h-64 object-cover"
                             onError={(e) => {
@@ -243,7 +269,7 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
                 >
                     <div className="relative max-w-4xl max-h-screen">
                         <img
-                            src={post.urlImage}
+                            src={postImage}
                             alt={post.title}
                             className="w-full h-auto max-h-screen object-contain rounded-lg"
                         />
