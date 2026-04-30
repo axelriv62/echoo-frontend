@@ -200,6 +200,8 @@ const HomePage = () => {
             setTimeout(() => {
                 setFormData(prev => ({ ...prev, success: null }));
             }, 3000);
+
+            setImagePreview(null)
         } else {
             setFormData(prev => ({
                 ...prev,
