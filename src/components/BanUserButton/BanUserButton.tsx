@@ -1,4 +1,4 @@
-import { useState, type MouseEvent } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { banUser } from "../../services/users.ts";
 
 type BanUserButtonProps = {
@@ -24,6 +24,10 @@ const BanUserButton = ({
     const [isLoading, setIsLoading] = useState(false);
     const [isBanned, setIsBanned] = useState(initialIsBanned);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setIsBanned(initialIsBanned);
+    }, [initialIsBanned]);
 
     const handleBan = async (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
@@ -78,4 +82,3 @@ const BanUserButton = ({
 };
 
 export default BanUserButton;
-

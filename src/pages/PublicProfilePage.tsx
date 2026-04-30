@@ -204,6 +204,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
 
     const isOwnProfile = Boolean(myUserId && profile.id === myUserId);
     const isIgnored = ignoredUserIds.has(profile.id);
+    const isBanned = profile.enabled === false;
 
     return (
         <div className="min-h-screen bg-linear-to-b from-[#f8f1ff] via-[#fcfafe] to-[#ffffff] px-4 py-6">
@@ -280,6 +281,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                                 {isAdmin && (
                                                     <BanUserButton
                                                         userId={profile.id}
+                                                        initialIsBanned={isBanned}
                                                     />
                                                 )}
                                             </>
