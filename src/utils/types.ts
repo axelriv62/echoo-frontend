@@ -1,8 +1,8 @@
 /**
- * TypeScript types for the data models used in the application.
- * These types define the structure of the data returned by the backend API and used throughout the frontend application.
+ * TypeScript types used across the frontend to describe API data and app state.
  */
 
+// Core domain entities returned by the backend.
 export type Comment = {
     id: string,
     user: User,
@@ -44,6 +44,7 @@ export type Topic = {
     name: string,
 }
 
+// Supporting types for relationships, reactions, history, and update payloads.
 export type FollowedPage = {
     pageId: string,
     rolePage: string,

@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { signin } from "../hooks/auth";
+import { signin } from "../services/auth.ts";
 
 /**
- * LoginPage component allows users to log in by providing their username and password.
- * It handles form submission, displays success or error messages, and redirects to the home page upon successful login.
- * @param setToken - A function to set the authentication token in the parent component's state
+ * Login page for authenticating users, showing feedback, and redirecting after success.
+ *
+ * @param setToken - Updates the authentication token in the parent state.
  */
 const LoginPage = ({ setToken }: { setToken: (token: string | null) => void }) => {
     const [formData, setFormData] = useState({ username: "", password: "" });

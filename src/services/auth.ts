@@ -1,5 +1,5 @@
-import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY} from '../utils/constants';
-import { getUserProfile } from '../services/api';
+import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY, IMAGE_PROFILE_KEY} from '../utils/constants.ts';
+import { getUserProfile } from './users.ts';
 
 // Type to define the shape of the authentication payload for both signin and register functions
 type AuthPayload = {
@@ -24,18 +24,42 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
         });
 
         if (!response.ok) {
+                let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            const normalizedDetails = details.toLowerCase();
+            if (
+                response.status === 403
+                || normalizedDetails.includes("banni")
+                || normalizedDetails.includes("ban")
+                || normalizedDetails.includes("desactive")
+                || normalizedDetails.includes("désactivé")
+            ) {
+                return { success: false, message: "Vous avez été banni" };
+            }
+
             return { success: false, message: "Identifiant ou mot de passe incorrect" };
         }
 
         const data = await response.json();
         localStorage.setItem(TOKEN_KEY, data.token);
+        localStorage.setItem(USERNAME_KEY, username);
 
         try {
-            const me = await getUserProfile(data.token);
+            const me = await getUserProfile();
             const roles = me.roles ?? [];
             const id = me.id;
+            const imageProfile = me.imageProfile ? "http://localhost:8080" + me.imageProfile : "";
             localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
             localStorage.setItem(ID_KEY, id);
+            localStorage.setItem(IMAGE_PROFILE_KEY, imageProfile);
         } catch (err) {
             localStorage.setItem(ROLES_KEY, JSON.stringify([]));
         }
@@ -72,12 +96,12 @@ export const register = async ({ username, password }: AuthPayload): Promise<{ s
 };
 
 /**
- * Deactivate the current user's account by sending a DELETE request to the backend.
+ * Disable the current user's account by sending a DELETE request to the backend.
  * If the deactivation is successful, the authentication token is removed from localStorage and a success message is returned.
  * Otherwise, an error message is returned.
  * @returns An object containing a success boolean and a message string
  */
-export const deactivate = async (): Promise<{ success: boolean; message: string }> => {
+export const disable = async (): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
 
     if (!token) {

@@ -1,24 +1,31 @@
+// RecommendedPosts component
+// --------------------------
+// Fetches and displays a (small) list of post recommendations. The
+// component shows a loading state while recommendations are retrieved and
+// provides an onDelete handler to remove posts from the local list when a
+// post is deleted.
 import { useEffect, useState } from "react";
 import PostCard from "../post-card/PostCard";
-import { getRecommendedPosts } from "../../hooks/posts";
+import { getRecommendedPosts } from "../../services/recommendations";
 import { TOKEN_KEY } from "../../utils/constants";
 import type { Post } from "../../utils/types";
 
 type RecommendedPostsProps = {
-    token?: string | null;
     limit?: number;
 };
 
-const RecommendedPosts = ({ token, limit = 1 }: RecommendedPostsProps) => {
+const RecommendedPosts = ({ limit = 1 }: RecommendedPostsProps) => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState("");
+    const token = localStorage.getItem(TOKEN_KEY);
 
+    // Load recommended posts from the backend when the component mounts or
+    // when the provided limit or authentication token changes.
     useEffect(() => {
         let isMounted = true;
 
         const loadRecommendedPosts = async () => {
-            const authToken = token ?? localStorage.getItem(TOKEN_KEY);
             const result = await getRecommendedPosts(limit);
 
             if (!isMounted) {
@@ -26,7 +33,7 @@ const RecommendedPosts = ({ token, limit = 1 }: RecommendedPostsProps) => {
             }
 
             setMessage(result.message);
-            setPosts(result.success && authToken ? result.posts : []);
+            setPosts(result.success ? result.posts : []);
             setLoading(false);
         };
 
@@ -37,6 +44,9 @@ const RecommendedPosts = ({ token, limit = 1 }: RecommendedPostsProps) => {
         };
     }, [limit, token]);
 
+    // Remove a deleted post from the local posts array. This is passed down
+    // to individual PostCard instances so they can notify this parent when
+    // they successfully delete a post.
     const handlePostDeleted = (postId: string) => {
         setPosts((currentPosts) => currentPosts.filter((post) => post.id !== postId));
     };

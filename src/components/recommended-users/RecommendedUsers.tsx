@@ -1,45 +1,39 @@
+// RecommendedUsers component
+// --------------------------
+// Fetches a list of suggested users and the list of users the current
+// authenticated user follows. Displays them in a horizontal carousel and
+// provides follow buttons for each suggestion.
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { getRecommendedUsers, type RecommendedUser } from '../../hooks/RecommendedUsers';
-import FollowUserButton from '../FollowUserButton/FollowUserButton';
-import { TOKEN_KEY } from '../../utils/constants';
-import { getMyFollowedUsers } from '../../services/api';
+import { getRecommendedUsers, type RecommendedUser } from '../../services/recommendations.ts';
+import FollowButton from '../follow-button/FollowButton';
+import { getMyFollowedUsers } from '../../services/users.ts';
+import { TOKEN_KEY } from '../../utils/constants.ts';
 
 type RecommendedUsersProps = {
-	token?: string | null;
 	onFollowSuccess?: () => void | Promise<void>;
 };
 
-const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => {
+const RecommendedUsers = ({ onFollowSuccess }: RecommendedUsersProps) => {
 	const navigate = useNavigate();
 	const [users, setUsers] = useState<RecommendedUser[]>([]);
 	const [followedUserIds, setFollowedUserIds] = useState<Set<string>>(new Set());
 	const [loading, setLoading] = useState(true);
 	const [message, setMessage] = useState('');
 	const carouselRef = useRef<HTMLDivElement | null>(null);
+	const token = localStorage.getItem(TOKEN_KEY);
 
-	const scrollCarousel = (direction: 'up' | 'down') => {
-		const container = carouselRef.current;
-		if (!container) {
-			return;
-		}
 
-		const item = container.querySelector<HTMLElement>('[data-carousel-item]');
-		const scrollAmount = item ? item.offsetWidth + 12 : 220;
-		container.scrollBy({
-			left: direction === 'up' ? -scrollAmount : scrollAmount,
-			behavior: 'smooth',
-		});
-	};
-
+	// Load suggested users and the list of currently followed users. The
+	// isMounted flag prevents state updates if the component unmounts
+	// before the asynchronous requests resolve.
 	useEffect(() => {
 		let isMounted = true;
 
 		const loadSuggestedUsers = async () => {
-			const authToken = token ?? localStorage.getItem(TOKEN_KEY);
 			const [result, followedResult] = await Promise.all([
 				getRecommendedUsers(),
-				authToken ? getMyFollowedUsers(authToken) : Promise.resolve({ success: false, message: "", userIds: [] }),
+				getMyFollowedUsers(),
 			]);
 			if (!isMounted) {
 				return;
@@ -72,26 +66,6 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 					<h3 className="text-lg font-semibold text-gray-800">Utilisateurs suggérés</h3>
 				</div>
 
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={() => scrollCarousel('up')}
-						disabled={loading || users.length === 0}
-						className="rounded-full border border-[#a237ff]/20 bg-white px-3 py-1 text-sm text-[#a237ff] transition hover:bg-[#a237ff]/10 disabled:cursor-not-allowed disabled:opacity-50"
-						aria-label="Faire défiler vers la gauche"
-					>
-						←
-					</button>
-					<button
-						type="button"
-						onClick={() => scrollCarousel('down')}
-						disabled={loading || users.length === 0}
-						className="rounded-full border border-[#a237ff]/20 bg-white px-3 py-1 text-sm text-[#a237ff] transition hover:bg-[#a237ff]/10 disabled:cursor-not-allowed disabled:opacity-50"
-						aria-label="Faire défiler vers la droite"
-					>
-						→
-					</button>
-				</div>
 			</div>
 
 			{loading ? (
@@ -133,15 +107,13 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 
 										<div className="mt-3 min-w-0">
 											<p className="truncate font-medium text-gray-800">{user.username}</p>
-											{user.email && <p className="mt-1 line-clamp-2 text-xs text-gray-500">{user.email}</p>}
 										</div>
 										<div className="mt-3 text-xs text-gray-500">Profil suggéré</div>
 									</div>
 									</button>
-									<FollowUserButton
+									<FollowButton
 										key={`${user.id}-${followedUserIds.has(user.id) ? "following" : "not-following"}`}
 										userId={user.id}
-										token={token}
 										initialIsFollowing={followedUserIds.has(user.id)}
 										onFollowSuccess={onFollowSuccess}
 									/>
@@ -156,4 +128,3 @@ const RecommendedUsers = ({ token, onFollowSuccess }: RecommendedUsersProps) => 
 };
 
 export default RecommendedUsers;
-
