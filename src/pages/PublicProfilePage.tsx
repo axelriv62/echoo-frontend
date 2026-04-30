@@ -230,19 +230,11 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                     {/* Profile header. */}
                     <div className="border-b border-[#e8ddf5] bg-linear-to-br from-[#a237ff]/14 via-[#ffffff] to-[#ff6b9d]/12 p-6">
                         <div className="flex gap-6 items-start">
-                            {profile.imageProfile ? (
-                                <img
-                                    src={profile.imageProfile}
-                                    alt={profile.username}
-                                    className="w-24 h-24 rounded-full object-cover ring-2 ring-[#a237ff]/20"
-                                />
-                            ) : (
-                                <div className="w-24 h-24 rounded-full bg-[#a237ff]/10 flex items-center justify-center">
-                                    <span className="text-3xl font-semibold text-[#a237ff]">
-                                        {profile.username.charAt(0).toUpperCase()}
-                                    </span>
-                                </div>
-                            )}
+                            <img
+                                src="/src/assets/no-profile-picture.jpg"
+                                alt={profile.username}
+                                className="w-24 h-24 rounded-full object-cover ring-2 ring-[#a237ff]/20"
+                            />
 
                             <div className="flex-1">
                                 <h2 className="mb-2 text-3xl font-bold text-[#1f1330]">{profile.username}</h2>
