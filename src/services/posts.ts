@@ -21,7 +21,7 @@ export const getPosts = async (): Promise<{ success: boolean; posts?: Post[], me
             return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter" };
         }
 
-        const response = await fetch(`${API_URL}/posts`, {
+        const response = await fetch(`${API_URL}/posts?size=10000`, {
             method: "GET",
             headers: {
                 'Content-Type': 'application/json',
