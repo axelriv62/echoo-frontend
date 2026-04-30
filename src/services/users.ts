@@ -179,6 +179,44 @@ export const banUser = async (payload: {
     }
 };
 
+export const unbanUser = async (payload: {
+    userId: string;
+}): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/unban-user`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Utilisateur debanni" };
+    } catch {
+        return { success: false, message: "Impossible de debannir l'utilisateur pour le moment" };
+    }
+};
+
 export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
