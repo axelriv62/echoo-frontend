@@ -111,6 +111,15 @@ const ProfilePage = ({setToken }: { token: string | null; setToken: (token: stri
                     />
                 </div>
 
+                {/* Account actions such as logout and deactivation. */}
+                <div className="mx-auto w-full max-w-sm rounded-2xl border border-[#a237ff]/15 bg-white/90 p-4 shadow-sm">
+                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a22bf]">Compte</p>
+                    <div className="space-y-2">
+                        <LogoutButton token={token} setToken={setToken} />
+                        <DeactivateAccountButton token={token} setToken={setToken} />
+                    </div>
+                </div>
+
                 {/* Current user's posts and deletion handling. */}
                 <section className="space-y-4">
                     <div className="rounded-2xl border border-[#a237ff]/15 bg-white/90 px-4 py-3 shadow-sm">
@@ -137,15 +146,6 @@ const ProfilePage = ({setToken }: { token: string | null; setToken: (token: stri
                         </div>
                     )}
                 </section>
-
-                {/* Account actions such as logout and deactivation. */}
-                <div className="mx-auto w-full max-w-sm rounded-2xl border border-[#a237ff]/15 bg-white/90 p-4 shadow-sm">
-                    <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a22bf]">Compte</p>
-                    <div className="space-y-2">
-                    <LogoutButton token={token} setToken={setToken} />
-                    <DeactivateAccountButton token={token} setToken={setToken} />
-                    </div>
-                </div>
             </div>
         </div>
     );
