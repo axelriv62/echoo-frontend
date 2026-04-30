@@ -138,6 +138,47 @@ export const toggleIgnoreUser = async (userId: string): Promise<{ success: boole
     }
 };
 
+export const banUser = async (payload: {
+    userId: string;
+    reason: string;
+    bannedAt: string;
+    unbannedAt: string | null;
+}): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/ban-user`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Utilisateur banni" };
+    } catch {
+        return { success: false, message: "Impossible de bannir l'utilisateur pour le moment" };
+    }
+};
+
 export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {

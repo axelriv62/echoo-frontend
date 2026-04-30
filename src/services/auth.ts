@@ -24,6 +24,27 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
         });
 
         if (!response.ok) {
+                let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            const normalizedDetails = details.toLowerCase();
+            if (
+                response.status === 403
+                || normalizedDetails.includes("banni")
+                || normalizedDetails.includes("ban")
+                || normalizedDetails.includes("desactive")
+                || normalizedDetails.includes("désactivé")
+            ) {
+                return { success: false, message: "Vous avez été banni" };
+            }
+
             return { success: false, message: "Identifiant ou mot de passe incorrect" };
         }
 
