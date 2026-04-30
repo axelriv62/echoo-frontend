@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
-import FollowUserButton from "../components/FollowUserButton/FollowUserButton";
-import IgnoreUserButton from "../components/IgnoreUserButton/IgnoreUserButton";
-import BanUserButton from "../components/BanUserButton/BanUserButton";
+import FollowButton from "../components/follow-button/FollowButton";
+import IgnoreButton from "../components/ignore-button/IgnoreButton";
+import BanButton from "../components/ban-button/BanButton";
 import FollowersModal from "../components/followers-modal/FollowersModal";
 import { getFollowers, getMyFollowedUsers, getUserProfile } from "../services/users.ts";
 import { getPostsByUser } from "../services/posts";
@@ -16,6 +16,9 @@ interface PublicProfilePageProps {
     setToken: (token: string | null) => void;
 }
 
+/**
+ * Public profile page for viewing another user's account, relations, and posts.
+ */
 const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
     const { userId } = useParams<{ userId: string }>();
     const navigate = useNavigate();
@@ -32,6 +35,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
     const [followersCount, setFollowersCount] = useState<number | null>(null);
     const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
+    // Load the current user's follow and ignore relations.
     useEffect(() => {
         let isMounted = true;
 
@@ -86,6 +90,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
         };
     }, [token]);
 
+    // Load the public profile posts when the profile changes.
     useEffect(() => {
         let isMounted = true;
 
@@ -128,6 +133,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
         };
     }, [profile?.id]);
 
+    // Load the follower count for the displayed profile.
     useEffect(() => {
         let isMounted = true;
 
@@ -221,7 +227,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                 </div>
 
                 <div className="overflow-hidden rounded-2xl border border-[#a237ff]/15 bg-white shadow-[0_12px_40px_rgba(162,55,255,0.12)]">
-                    {/* Profil Header */}
+                    {/* Profile header. */}
                     <div className="border-b border-[#e8ddf5] bg-linear-to-br from-[#a237ff]/14 via-[#ffffff] to-[#ff6b9d]/12 p-6">
                         <div className="flex gap-6 items-start">
                             {profile.imageProfile ? (
@@ -256,12 +262,12 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                             </button>
                                         ) : (
                                             <>
-                                                <FollowUserButton
+                                                <FollowButton
                                                     key={`${profile.id}-${followedUserIds.has(profile.id) ? 'following' : 'not-following'}`}
                                                     userId={profile.id}
                                                     initialIsFollowing={followedUserIds.has(profile.id)}
                                                 />
-                                                <IgnoreUserButton
+                                                <IgnoreButton
                                                     key={`${profile.id}-${isIgnored ? 'ignored' : 'not-ignored'}`}
                                                     userId={profile.id}
                                                     token={token}
@@ -279,7 +285,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                                     }}
                                                 />
                                                 {isAdmin && (
-                                                    <BanUserButton
+                                                    <BanButton
                                                         userId={profile.id}
                                                         initialIsBanned={isBanned}
                                                     />

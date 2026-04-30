@@ -1,12 +1,11 @@
 /**
- * This file contains constants used throughout the application, such as API endpoints and localStorage keys.
- * Centralizing these values helps maintain consistency and makes it easier to update them in the future if needed.
+ * Shared constants for API access and browser storage.
  */
 
-// Base URL for the backend API
+// Backend API base URL.
 export const API_URL = 'http://localhost:8080/api'
 
-// Key used to store the authentication token in localStorage
+// localStorage keys used by the authentication flow.
 export const TOKEN_KEY = 'authToken'
 
 export const ROLES_KEY = 'userRoles'

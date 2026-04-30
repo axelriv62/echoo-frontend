@@ -1,3 +1,10 @@
+// PostCard component
+// ------------------
+// This file exports a React functional component that renders a single post card
+// including header, image lightbox, like button, comments and delete modal.
+//
+// English docstring / comments have been added to describe the component's
+// responsibilities and the purpose of the main hooks and handlers.
 import { useState, useEffect } from "react";
 import type { Post, Comment } from "../../utils/types.ts";
 import { createComment } from "../../services/comments.ts";
@@ -25,7 +32,9 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     const [profileImage, setProfileImage] = useState<string>('/src/assets/no-profile-picture.jpg');
     const [postImage, setPostImage] = useState<string | null>(null);
 
-    // Récupérer l'ID utilisateur actuel
+    // Retrieve the current user id from local storage and check whether the
+    // current user already liked this post. The isMounted flag avoids state
+    // updates after the component is unmounted.
     useEffect(() => {
         const userId = localStorage.getItem(ID_KEY);
         let isMounted = true;
@@ -82,6 +91,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         };
     }, [post.id, post.user.imageProfile, post.urlImage]);
 
+    // Delete the post and call the optional onDelete callback provided by the
+    // parent. Shows a loading state while the request is in progress.
     const handleDeletePost = async () => {
         setIsLoading(true);
         try {
@@ -99,6 +110,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         }
     };
 
+    // Create a new comment (optionally a reply to a parent comment) and
+    // append it to the local comments state when successful.
     const handleCommentSubmit = async (content: string, parentCommentId?: string | null) => {
         setIsCommentLoading(true);
         try {
@@ -117,6 +130,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         }
     };
 
+    // Toggle like status for the post. Prevents concurrent operations by
+    // tracking isLoading and isCheckingLike states.
     const handleLikeClick = async () => {
         if (isLoading || isCheckingLike) {
             return;

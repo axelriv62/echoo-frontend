@@ -1,8 +1,8 @@
-import RecommendedUsers from "../components/suggested_user/RecommendedUsers";
-import RecommendedPosts from "../components/suggested_post/RecommendedPosts";
+import RecommendedUsers from "../components/recommended-users/RecommendedUsers";
+import RecommendedPosts from "../components/recommended-posts/RecommendedPosts";
 
 /**
- * DEPRECATED: This page is no longer used as the recommendations are now integrated into the home page.
+ * Deprecated recommendations page kept for legacy routing support.
  */
 const RecommendationsPage = () => {
     return (

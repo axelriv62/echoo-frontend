@@ -1,7 +1,12 @@
+// RecommendedUsers component
+// --------------------------
+// Fetches a list of suggested users and the list of users the current
+// authenticated user follows. Displays them in a horizontal carousel and
+// provides follow buttons for each suggestion.
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { getRecommendedUsers, type RecommendedUser } from '../../services/recommendations.ts';
-import FollowUserButton from '../FollowUserButton/FollowUserButton';
+import FollowButton from '../follow-button/FollowButton';
 import { getMyFollowedUsers } from '../../services/users.ts';
 import { TOKEN_KEY } from '../../utils/constants.ts';
 
@@ -19,6 +24,9 @@ const RecommendedUsers = ({ onFollowSuccess }: RecommendedUsersProps) => {
 	const token = localStorage.getItem(TOKEN_KEY);
 
 
+	// Load suggested users and the list of currently followed users. The
+	// isMounted flag prevents state updates if the component unmounts
+	// before the asynchronous requests resolve.
 	useEffect(() => {
 		let isMounted = true;
 
@@ -103,7 +111,7 @@ const RecommendedUsers = ({ onFollowSuccess }: RecommendedUsersProps) => {
 										<div className="mt-3 text-xs text-gray-500">Profil suggéré</div>
 									</div>
 									</button>
-									<FollowUserButton
+									<FollowButton
 										key={`${user.id}-${followedUserIds.has(user.id) ? "following" : "not-following"}`}
 										userId={user.id}
 										initialIsFollowing={followedUserIds.has(user.id)}

@@ -1,6 +1,9 @@
 import { useState, type MouseEvent } from "react";
 import { toggleIgnoreUser } from "../../services/users.ts";
 
+/**
+ * Props for the IgnoreButton component.
+ */
 type IgnoreUserButtonProps = {
     userId: string;
     token?: string | null;
@@ -9,7 +12,14 @@ type IgnoreUserButtonProps = {
     className?: string;
 };
 
-const IgnoreUserButton = ({
+/**
+ * IgnoreButton
+ *
+ * Toggles ignoring/unignoring a user. Maintains local loading/error state
+ * and dispatches a global event ('ignoredUsersChanged') on success so other
+ * parts of the app can react.
+ */
+const IgnoreButton = ({
     userId,
     initialIsIgnored = false,
     onIgnoreSuccess,
@@ -64,6 +74,6 @@ const IgnoreUserButton = ({
     );
 };
 
-export default IgnoreUserButton;
+export default IgnoreButton;
 
 

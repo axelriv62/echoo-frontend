@@ -35,6 +35,11 @@ export const getUserProfile = async (): Promise<User> => {
     }
 };
 
+/**
+ * Fetch a public user profile by user id.
+ *
+ * @param userId - The id of the profile to load.
+ */
 export const getPublicProfileById = async (userId: string): Promise<User> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -70,6 +75,11 @@ export const getPublicProfileById = async (userId: string): Promise<User> => {
     }
 };
 
+/**
+ * Follow a user and return a success state plus a message.
+ *
+ * @param userId - The user id to follow.
+ */
 export const followUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -104,6 +114,11 @@ export const followUser = async (userId: string): Promise<{ success: boolean; me
     }
 };
 
+/**
+ * Toggle the ignore state for a user.
+ *
+ * @param userId - The user id to ignore or unignore.
+ */
 export const toggleIgnoreUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -138,6 +153,11 @@ export const toggleIgnoreUser = async (userId: string): Promise<{ success: boole
     }
 };
 
+/**
+ * Ban a user using the provided moderation payload.
+ *
+ * @param payload - Ban details sent to the API.
+ */
 export const banUser = async (payload: {
     userId: string;
     reason: string;
@@ -179,6 +199,52 @@ export const banUser = async (payload: {
     }
 };
 
+/**
+ * Unban a user using the provided moderation payload.
+ *
+ * @param payload - The user id to restore.
+ */
+export const unbanUser = async (payload: {
+    userId: string;
+}): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/unban-user`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Utilisateur debanni" };
+    } catch {
+        return { success: false, message: "Impossible de debannir l'utilisateur pour le moment" };
+    }
+};
+
+/**
+ * Get the list of user ids followed by the current user.
+ */
 export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -239,6 +305,11 @@ export const getMyFollowedUsers = async (): Promise<{ success: boolean; message:
     }
 };
 
+/**
+ * Update the authenticated user's profile.
+ *
+ * @param payload - Profile fields and selected topic ids.
+ */
 export const updateUserProfile = async (payload: UpdateUserProfilePayload): Promise<User> => {
     const token = localStorage.getItem(TOKEN_KEY);
     if (!token) {
@@ -291,6 +362,11 @@ export const updateUserProfile = async (payload: UpdateUserProfilePayload): Prom
     }
 };
 
+/**
+ * Search users by username query.
+ *
+ * @param query - The search term to send to the API.
+ */
 export const searchUsers = async (
     query: string
 ): Promise<{ success: boolean; message: string; users: Array<{ id: string; username: string; imageProfile: string | null }> }> => {
@@ -330,6 +406,9 @@ export const searchUsers = async (
     }
 };
 
+/**
+ * Paginated response returned by the followers API.
+ */
 export type FollowersResponse = {
     totalElements: number;
     totalPages: number;
@@ -359,6 +438,13 @@ export type FollowersResponse = {
     empty: boolean;
 };
 
+/**
+ * Load a paginated list of followers for a user.
+ *
+ * @param userId - The user id whose followers should be fetched.
+ * @param page - The zero-based page index.
+ * @param size - The number of items per page.
+ */
 export const getFollowers = async (
     userId: string,
     page: number = 0,
