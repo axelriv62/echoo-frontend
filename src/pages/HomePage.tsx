@@ -21,7 +21,7 @@ interface PostFormState {
     success: string | null;
 }
 
-const RECOMMENDATION_INTERVAL = 8;
+const RECOMMENDATION_INTERVAL = 10;
 
 const HomePage = () => {
     const navigate = useNavigate();
@@ -212,7 +212,7 @@ const HomePage = () => {
                 <div
                     key={post.id}
                     id={`post-${post.id}`}
-                    className={isHighlighted ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
+                    className={isHighlighted ? "rounded-2xl ring-2 ring-[#a237ff] ring-offset-2 ring-offset-[#f6efff]" : ""}
                 >
                     <PostCard post={post} onDelete={handlePostDeleted} />
                 </div>
@@ -220,7 +220,7 @@ const HomePage = () => {
 
             if ((index + 1) % RECOMMENDATION_INTERVAL === 0) {
                 items.push(
-                    <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+                    <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#a237ff]/25 bg-linear-to-br from-[#ffffff] to-[#f8f1ff] p-4 shadow-sm">
                         <RecommendedUsers onFollowSuccess={refreshPosts} />
                         <RecommendedPosts />
                     </section>
@@ -248,15 +248,21 @@ const HomePage = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto border-l border-r border-[#e5e7eb] min-h-screen">
-            <div className="border-b border-[#e5e7eb] p-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="min-h-screen bg-linear-to-b from-[#f8f1ff] via-[#fcfafe] to-[#ffffff] px-4 py-6">
+            <div className="mx-auto max-w-4xl space-y-6">
+                <div className="overflow-hidden rounded-2xl border border-[#a237ff]/20 bg-white shadow-[0_12px_40px_rgba(162,55,255,0.12)]">
+                    <div className="border-b border-[#a237ff]/15 bg-linear-to-r from-[#a237ff]/20 via-[#a237ff]/10 to-[#ff6b9d]/10 px-4 py-3">
+                        <p className="text-sm font-semibold text-[#5d1a91]">Nouveau post</p>
+                        <p className="text-xs text-gray-600">Partage une idee a la communaute</p>
+                    </div>
+                    <div className="p-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                     <input
                         type="text"
                         placeholder="Titre du post"
                         value={formData.title}
                         onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full text-lg font-semibold bg-transparent placeholder-gray-400 text-[#000000] outline-none border-b border-[#e5e7eb] pb-2"
+                        className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-lg font-semibold text-[#000000] placeholder-gray-400 outline-none focus:border-[#a237ff]/40 focus:ring-2 focus:ring-[#a237ff]/20"
                         disabled={formData.isLoading}
                     />
 
@@ -264,7 +270,7 @@ const HomePage = () => {
                         placeholder="Quoi de neuf?!"
                         value={formData.description}
                         onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full text-xl bg-transparent placeholder-gray-500 text-[#000000] outline-none resize-none"
+                        className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-3 text-xl text-[#000000] placeholder-gray-500 outline-none resize-none focus:border-[#a237ff]/40 focus:ring-2 focus:ring-[#a237ff]/20"
                         rows={4}
                         disabled={formData.isLoading}
                     />
@@ -297,9 +303,9 @@ const HomePage = () => {
                         </div>
                     )}
 
-                    <div className="flex justify-between items-center pt-4 border-t border-[#e5e7eb]">
+                    <div className="flex items-center justify-between border-t border-[#e5e7eb] pt-4">
                         <div className="flex gap-2">
-                            <label className="cursor-pointer text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition">
+                            <label className="cursor-pointer rounded-full p-2 text-[#a237ff] transition hover:bg-[#a237ff]/10">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -314,7 +320,7 @@ const HomePage = () => {
 
                             <button
                                 type="button"
-                                className="text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition"
+                                className="rounded-full p-2 text-[#a237ff] transition hover:bg-[#a237ff]/10"
                                 onClick={() => setShowTopicsModal(true)}
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -346,7 +352,7 @@ const HomePage = () => {
                         <button
                             type="submit"
                             disabled={formData.isLoading || !formData.title.trim() || !formData.description.trim()}
-                            className="btn-primary flex items-center gap-2"
+                            className="btn-primary flex items-center gap-2 shadow-sm shadow-[#a237ff]/30"
                         >
                             {formData.isLoading ? (
                                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -355,23 +361,24 @@ const HomePage = () => {
                             )}
                         </button>
                     </div>
-                </form>
-            </div>
-
+                        </form>
+                    </div>
+                </div>
 
             {loading ? (
-                <div className="p-4 text-center text-gray-500">
+                <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 text-center text-gray-500 shadow-sm">
                     <p className="py-8">Chargement des posts...</p>
                 </div>
             ) : posts.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
+                <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 text-center text-gray-500 shadow-sm">
                     <p className="py-8">Les posts apparaîtront ici</p>
                 </div>
             ) : (
-                <div className="space-y-6 p-4">
+                <div className="space-y-6">
                     {renderFeed()}
                 </div>
             )}
+            </div>
 
             <TopicsModal
                 isOpen={showTopicsModal}
