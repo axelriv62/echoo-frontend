@@ -1,5 +1,5 @@
 import {API_URL, TOKEN_KEY} from "../utils/constants";
-import type { UpdateUserProfilePayload, User } from "../utils/types";
+import type { UpdateUserProfilePayload, User, FollowedUser } from "../utils/types";
 
 /**
  * Fetches the profile of the currently authenticated user from the API.
@@ -286,5 +286,76 @@ export const searchUsers = async (
         return { success: true, message: "Utilisateurs trouvés", users };
     } catch {
         return { success: false, message: "Erreur lors de la recherche", users: [] };
+    }
+};
+
+export type FollowersResponse = {
+    totalElements: number;
+    totalPages: number;
+    pageable: {
+        paged: boolean;
+        pageSize: number;
+        pageNumber: number;
+        unpaged: boolean;
+        offset: number;
+        sort: {
+            unsorted: boolean;
+            sorted: boolean;
+            empty: boolean;
+        };
+    };
+    first: boolean;
+    last: boolean;
+    numberOfElements: number;
+    size: number;
+    content: FollowedUser[];
+    number: number;
+    sort: {
+        unsorted: boolean;
+        sorted: boolean;
+        empty: boolean;
+    };
+    empty: boolean;
+};
+
+export const getFollowers = async (
+    userId: string,
+    page: number = 0,
+    size: number = 10
+): Promise<FollowersResponse | null> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
+    try {
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        };
+
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const response = await fetch(
+            `${API_URL}/users/${userId}/followers?page=${page}&size=${size}`,
+            {
+                method: "GET",
+                headers,
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`Erreur: ${response.status} ${response.statusText}`);
+        }
+
+        const data = (await response.json()) as FollowersResponse;
+        return data;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error("Erreur lors de la récupération des followers", { cause: error });
     }
 };
