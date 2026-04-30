@@ -1,4 +1,4 @@
-import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY} from '../utils/constants.ts';
+import {API_URL, TOKEN_KEY, ROLES_KEY, ID_KEY, USERNAME_KEY, IMAGE_PROFILE_KEY} from '../utils/constants.ts';
 import { getUserProfile } from './users.ts';
 
 // Type to define the shape of the authentication payload for both signin and register functions
@@ -56,8 +56,10 @@ export const signin = async ({ username, password }: AuthPayload): Promise<{ suc
             const me = await getUserProfile();
             const roles = me.roles ?? [];
             const id = me.id;
+            const imageProfile = me.imageProfile ? "http://localhost:8080" + me.imageProfile : "";
             localStorage.setItem(ROLES_KEY, JSON.stringify(roles));
             localStorage.setItem(ID_KEY, id);
+            localStorage.setItem(IMAGE_PROFILE_KEY, imageProfile);
         } catch (err) {
             localStorage.setItem(ROLES_KEY, JSON.stringify([]));
         }

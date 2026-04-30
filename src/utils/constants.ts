@@ -13,3 +13,5 @@ export const ROLES_KEY = 'userRoles'
 export const ID_KEY = 'userId'
 
 export const USERNAME_KEY = 'username'
+
+export const IMAGE_PROFILE_KEY = 'imageProfile'
