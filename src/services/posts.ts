@@ -5,7 +5,7 @@ export type CreatePostPayload = {
     title: string;
     description: string;
     pageId?: string;
-    urlImage?: string;
+    urlImage?: File;
     topicsIds?: string[];
 };
 

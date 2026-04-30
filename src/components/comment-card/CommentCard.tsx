@@ -1,6 +1,7 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import type { Comment } from "../../utils/types";
 import { deleteComment } from "../../services/comments.ts";
+import {getImageUrl} from "../../services/images.ts";
 
 /**
  * Props for the CommentCard component.
@@ -29,12 +30,11 @@ const CommentCard: React.FC<CommentCardProps> = ({
                                                      onReplyClick,
                                                      onCommentDeleted,
                                                  }) => {
-    // Use provided profile image or fallback to a bundled placeholder
-    const profileImage = comment.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     // Local copy of the comment so we can clear content after deletion
     const [deletedComment, setDeletedComment] = useState(comment);
+    const [profileImage, setProfileImage] = useState<string>('/src/assets/no-profile-picture.jpg');
 
     const isAuthor = currentUserId === comment.user.id;
     // Consider comment deleted when its content is empty
@@ -63,16 +63,27 @@ const CommentCard: React.FC<CommentCardProps> = ({
         }
     };
 
+    useEffect(() => {
+        const loadProfileImage = async () => {
+            if (comment.user.imageProfile) {
+                try {
+                    const url = await getImageUrl(comment.user.imageProfile);
+                    setProfileImage(url);
+                } catch {
+                    setProfileImage('/src/assets/no-profile-picture.jpg');
+                }
+            }
+        };
+
+        loadProfileImage();
+    }, [comment.user.imageProfile]);
+
     return (
         <div className={`flex gap-3 ${isReply ? 'ml-10 mt-3' : 'mt-4'}`}>
             <img
                 src={profileImage}
                 alt={deletedComment.user.username}
                 className="w-8 h-8 rounded-full object-cover bg-gray-200 flex-shrink-0"
-                onError={(e) => {
-                    // Fallback image if the src fails to load
-                    (e.target as HTMLImageElement).src = '/no-profile-picture.jpg';
-                }}
             />
             <div className="flex-1 bg-gray-100 rounded-lg p-3">
                 <div className="flex items-center justify-between">
