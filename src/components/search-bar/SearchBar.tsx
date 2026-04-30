@@ -1,8 +1,17 @@
+// SearchBar component
+// -------------------
+// Provides a combined user/post search input. Supports toggling between
+// searching users and posts, debounced request tracking via a request id to
+// avoid race conditions, and navigation when a result is selected.
+//
+// The component merges results from several endpoints to improve the
+// relevance of post searches (searchPosts + posts by users whose username
+// matches the query).
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { searchPosts, searchUsers, getPostsByUser, getUserProfile } from '../../services/api';
-import { TOKEN_KEY } from '../../utils/constants';
+import { searchUsers, getUserProfile } from '../../services/users.ts';
 import type { Post } from '../../utils/types';
+import {getPostsByUser, searchPosts} from "../../services/posts.ts";
 
 type SearchMode = 'users' | 'posts';
 
@@ -32,6 +41,10 @@ const SearchBar: React.FC = () => {
 	const searchRequestIdRef = useRef(0);
 	const navigate = useNavigate();
 
+	// Perform a search for the provided query and mode. Uses an incremental
+	// request id to discard out-of-order responses and avoid updating state
+	// with stale results. When searching posts, this function also fetches
+	// posts from users that match the query and merges the results.
 	const performSearch = async (searchQuery: string, searchMode: SearchMode) => {
 		const trimmedQuery = searchQuery.trim();
 
@@ -47,8 +60,7 @@ const SearchBar: React.FC = () => {
 		setIsLoading(true);
 
 		if (searchMode === 'users') {
-			const token = localStorage.getItem(TOKEN_KEY);
-			const result = await searchUsers(trimmedQuery, token);
+			const result = await searchUsers(trimmedQuery);
 
 			if (requestId !== searchRequestIdRef.current) {
 				return;
@@ -65,25 +77,22 @@ const SearchBar: React.FC = () => {
 			return;
 		}
 
-		const token = localStorage.getItem(TOKEN_KEY);
-		const postsResult = await searchPosts(trimmedQuery, token);
+		const postsResult = await searchPosts(trimmedQuery);
 
 		// find users matching the query to fetch their posts via backend
-		const usersResult = await searchUsers(trimmedQuery, token);
+		const usersResult = await searchUsers(trimmedQuery);
 		let creatorPosts: Post[] = [];
 		// prepare list of users to fetch posts for (limit to first 5)
 		const usersToFetch = usersResult.success ? usersResult.users.slice(0, 5) : [];
 
 		// also include current authenticated user if their username matches the query
 		try {
-			if (token) {
-				const me = await getUserProfile(token);
-				const normalizedQuery = trimmedQuery.toLowerCase();
-				if (me?.username && me.username.toLowerCase().includes(normalizedQuery)) {
-					const alreadyIncluded = usersToFetch.some((u) => u.id === me.id);
-					if (!alreadyIncluded) {
-						usersToFetch.unshift({ id: me.id, username: me.username, imageProfile: me.imageProfile ?? null });
-					}
+			const me = await getUserProfile();
+			const normalizedQuery = trimmedQuery.toLowerCase();
+			if (me?.username && me.username.toLowerCase().includes(normalizedQuery)) {
+				const alreadyIncluded = usersToFetch.some((u) => u.id === me.id);
+				if (!alreadyIncluded) {
+					usersToFetch.unshift({ id: me.id, username: me.username, imageProfile: me.imageProfile ?? null });
 				}
 			}
 		} catch {
@@ -92,7 +101,7 @@ const SearchBar: React.FC = () => {
 
 		if (usersToFetch.length > 0) {
 			// limit to 5 users to avoid too many requests
-			const postsByUserPromises = usersToFetch.slice(0, 5).map((u) => getPostsByUser(u.id, token));
+			const postsByUserPromises = usersToFetch.slice(0, 5).map((u) => getPostsByUser(u.id));
 			const postsByUserResults = await Promise.all(postsByUserPromises);
 			creatorPosts = postsByUserResults.flatMap((r) => (r.success ? r.posts : []));
 		}
@@ -129,6 +138,8 @@ const SearchBar: React.FC = () => {
 		setIsLoading(false);
 	};
 
+	// Change the active search mode (users or posts) and trigger a fresh
+	// search for the current query in the new mode.
 	const handleModeChange = (nextMode: SearchMode) => {
 		setMode(nextMode);
 		setIsModeMenuOpen(false);
@@ -136,11 +147,13 @@ const SearchBar: React.FC = () => {
 		void performSearch(query, nextMode);
 	};
 
+	// Update the query state and trigger a search for the new value.
 	const handleQueryChange = (value: string) => {
 		setQuery(value);
 		void performSearch(value, mode);
 	};
 
+	// Navigate to a user's profile and clear the search state.
 	const handleUserClick = (userId: string) => {
 		navigate(`/user/${userId}`);
 		setQuery('');
@@ -148,6 +161,8 @@ const SearchBar: React.FC = () => {
 		setShowResults(false);
 	};
 
+	// Navigate to the home page with a highlight state for the selected
+	// post. Clear the search UI afterwards.
 	const handlePostClick = (postId: string) => {
 		navigate('/', { state: { highlightPostId: postId } });
 		setQuery('');
@@ -155,6 +170,8 @@ const SearchBar: React.FC = () => {
 		setShowResults(false);
 	};
 
+	// Close the results/menu when focus leaves the search container.
+	// Uses requestAnimationFrame to wait for the next focus target.
 	const handleContainerBlur = (event: React.FocusEvent<HTMLDivElement>) => {
 		const container = event.currentTarget;
 		requestAnimationFrame(() => {

@@ -1,3 +1,5 @@
+// Easter egg generate by IA
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 
@@ -138,7 +140,7 @@ function saveBestScore(songName: string, score: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const GamePage = ({ token }: { token: string | null }) => {
+const GamePage = () => {
     const navigate = useNavigate();
 
     const [songIdx, setSongIdx] = useState(0);

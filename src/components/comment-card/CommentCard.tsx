@@ -1,7 +1,11 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import type { Comment } from "../../utils/types";
-import { deleteComment } from "../../hooks/comments";
+import { deleteComment } from "../../services/comments.ts";
+import {getImageUrl} from "../../services/images.ts";
 
+/**
+ * Props for the CommentCard component.
+ */
 interface CommentCardProps {
     comment: Comment;
     isReply?: boolean;
@@ -10,6 +14,15 @@ interface CommentCardProps {
     onCommentDeleted?: (commentId: string, comment: Comment) => void;
 }
 
+/**
+ * CommentCard
+ *
+ * Renders a single comment, optionally indented for replies. If the current
+ * user is the author, a delete button is shown which opens a confirmation
+ * dialog and calls the API to remove the comment. After deletion the comment
+ * content is replaced with an empty string and the optional
+ * onCommentDeleted callback is invoked so the parent can update its state.
+ */
 const CommentCard: React.FC<CommentCardProps> = ({
                                                      comment,
                                                      isReply = false,
@@ -17,25 +30,32 @@ const CommentCard: React.FC<CommentCardProps> = ({
                                                      onReplyClick,
                                                      onCommentDeleted,
                                                  }) => {
-    const profileImage = comment.user.imageProfile || '/src/assets/no-profile-picture.jpg';
     const [isDeleting, setIsDeleting] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    // Local copy of the comment so we can clear content after deletion
     const [deletedComment, setDeletedComment] = useState(comment);
+    const [profileImage, setProfileImage] = useState<string>('/src/assets/no-profile-picture.jpg');
 
     const isAuthor = currentUserId === comment.user.id;
+    // Consider comment deleted when its content is empty
     const isDeleted = !deletedComment.content || deletedComment.content.trim() === '';
 
+    /**
+     * Call API to delete the comment. On success, clear the content locally
+     * and notify the parent via onCommentDeleted.
+     */
     const handleDelete = async () => {
         setIsDeleting(true);
         try {
             const result = await deleteComment(deletedComment.id);
             if (result.success) {
-                // Mettre à jour le commentaire avec un contenu vide
+                // Update local copy to reflect deletion (empty content)
                 const updatedComment = { ...deletedComment, content: '' };
                 setDeletedComment(updatedComment);
                 onCommentDeleted?.(deletedComment.id, updatedComment);
                 setShowDeleteConfirm(false);
             } else {
+                // Basic user-visible error; could be replaced with a toast
                 alert(result.message);
             }
         } finally {
@@ -43,15 +63,27 @@ const CommentCard: React.FC<CommentCardProps> = ({
         }
     };
 
+    useEffect(() => {
+        const loadProfileImage = async () => {
+            if (comment.user.imageProfile) {
+                try {
+                    const url = await getImageUrl(comment.user.imageProfile);
+                    setProfileImage(url);
+                } catch {
+                    setProfileImage('/src/assets/no-profile-picture.jpg');
+                }
+            }
+        };
+
+        loadProfileImage();
+    }, [comment.user.imageProfile]);
+
     return (
         <div className={`flex gap-3 ${isReply ? 'ml-10 mt-3' : 'mt-4'}`}>
             <img
                 src={profileImage}
                 alt={deletedComment.user.username}
                 className="w-8 h-8 rounded-full object-cover bg-gray-200 flex-shrink-0"
-                onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/no-profile-picture.jpg';
-                }}
             />
             <div className="flex-1 bg-gray-100 rounded-lg p-3">
                 <div className="flex items-center justify-between">

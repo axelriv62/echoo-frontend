@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from "react-router";
-import { register } from "../hooks/auth.ts";
+import { register } from "../services/auth.ts";
 
 /**
  * RegisterPage component allows users to create a new account by providing a username and password.

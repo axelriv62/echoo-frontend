@@ -1,7 +1,17 @@
-import { API_URL } from "../utils/constants";
-import type { Post, UpdateUserProfilePayload, User } from "../utils/types";
+import {API_URL, TOKEN_KEY} from "../utils/constants";
+import type { UpdateUserProfilePayload, User, FollowedUser } from "../utils/types";
 
-export const getUserProfile = async (token: string): Promise<User> => {
+/**
+ * Fetches the profile of the currently authenticated user from the API.
+ * @returns A promise that resolves to the user's profile data.
+ * @throws An error if the user is not authenticated or if there is an issue with the API request.
+ */
+export const getUserProfile = async (): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/get-me`, {
             method: "GET",
@@ -25,7 +35,17 @@ export const getUserProfile = async (token: string): Promise<User> => {
     }
 };
 
-export const getPublicProfileById = async (userId: string, token: string | null = null): Promise<User> => {
+/**
+ * Fetch a public user profile by user id.
+ *
+ * @param userId - The id of the profile to load.
+ */
+export const getPublicProfileById = async (userId: string): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const headers: HeadersInit = {
             "Content-Type": "application/json",
@@ -55,10 +75,17 @@ export const getPublicProfileById = async (userId: string, token: string | null 
     }
 };
 
-export const followUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+/**
+ * Follow a user and return a success state plus a message.
+ *
+ * @param userId - The user id to follow.
+ */
+export const followUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/follow-user/${userId}`, {
             method: "PATCH",
@@ -87,10 +114,17 @@ export const followUser = async (
     }
 };
 
-export const toggleIgnoreUser = async (
-    userId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
+/**
+ * Toggle the ignore state for a user.
+ *
+ * @param userId - The user id to ignore or unignore.
+ */
+export const toggleIgnoreUser = async (userId: string): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/ignore-user/${userId}`, {
             method: "PATCH",
@@ -119,9 +153,104 @@ export const toggleIgnoreUser = async (
     }
 };
 
-export const getMyFollowedUsers = async (
-    token: string
-): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+/**
+ * Ban a user using the provided moderation payload.
+ *
+ * @param payload - Ban details sent to the API.
+ */
+export const banUser = async (payload: {
+    userId: string;
+    reason: string;
+    bannedAt: string;
+    unbannedAt: string | null;
+}): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/ban-user`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Utilisateur banni" };
+    } catch {
+        return { success: false, message: "Impossible de bannir l'utilisateur pour le moment" };
+    }
+};
+
+/**
+ * Unban a user using the provided moderation payload.
+ *
+ * @param payload - The user id to restore.
+ */
+export const unbanUser = async (payload: {
+    userId: string;
+}): Promise<{ success: boolean; message: string }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter." };
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/users/unban-user`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            let details = response.statusText;
+            try {
+                const errorBody = (await response.json()) as { message?: string };
+                if (errorBody?.message) {
+                    details = errorBody.message;
+                }
+            } catch {
+                // Keep default statusText.
+            }
+
+            return { success: false, message: `Erreur: ${response.status} ${details}` };
+        }
+
+        return { success: true, message: "Utilisateur debanni" };
+    } catch {
+        return { success: false, message: "Impossible de debannir l'utilisateur pour le moment" };
+    }
+};
+
+/**
+ * Get the list of user ids followed by the current user.
+ */
+export const getMyFollowedUsers = async (): Promise<{ success: boolean; message: string; userIds: string[] }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", userIds: [] };
+    }
+
     try {
         const response = await fetch(`${API_URL}/users/me/followed-users`, {
             method: "GET",
@@ -176,10 +305,17 @@ export const getMyFollowedUsers = async (
     }
 };
 
-export const updateUserProfile = async (
-    token: string,
-    payload: UpdateUserProfilePayload
-): Promise<User> => {
+/**
+ * Update the authenticated user's profile.
+ *
+ * @param payload - Profile fields and selected topic ids.
+ */
+export const updateUserProfile = async (payload: UpdateUserProfilePayload): Promise<User> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const params = new URLSearchParams();
         payload.topicsIds.forEach((topicId) => params.append("topics", topicId));
@@ -226,10 +362,19 @@ export const updateUserProfile = async (
     }
 };
 
+/**
+ * Search users by username query.
+ *
+ * @param query - The search term to send to the API.
+ */
 export const searchUsers = async (
-    query: string,
-    token: string | null = null
+    query: string
 ): Promise<{ success: boolean; message: string; users: Array<{ id: string; username: string; imageProfile: string | null }> }> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        return { success: false, message: "Utilisateur non authentifié, veuillez vous connecter.", users: [] };
+    }
+
     if (!query.trim()) {
         return { success: true, message: "Requête vide", users: [] };
     }
@@ -261,51 +406,55 @@ export const searchUsers = async (
     }
 };
 
-export const searchPosts = async (
-    query: string,
-    token: string | null = null
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
-    if (!query.trim()) {
-        return { success: true, message: "Requête vide", posts: [] };
-    }
-
-    try {
-        const headers: HeadersInit = {
-            "Content-Type": "application/json",
+/**
+ * Paginated response returned by the followers API.
+ */
+export type FollowersResponse = {
+    totalElements: number;
+    totalPages: number;
+    pageable: {
+        paged: boolean;
+        pageSize: number;
+        pageNumber: number;
+        unpaged: boolean;
+        offset: number;
+        sort: {
+            unsorted: boolean;
+            sorted: boolean;
+            empty: boolean;
         };
-
-        if (token) {
-            headers.Authorization = `Bearer ${token}`;
-        }
-
-        const response = await fetch(`${API_URL}/posts/search?query=${encodeURIComponent(query)}`, {
-            method: "GET",
-            headers,
-        });
-
-        if (!response.ok) {
-            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
-        }
-
-        const data = await response.json();
-        const posts = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.content)
-                ? data.content
-                : Array.isArray(data?.posts)
-                    ? data.posts
-                    : [];
-
-        return { success: true, message: "Posts trouvés", posts };
-    } catch {
-        return { success: false, message: "Erreur lors de la recherche des posts", posts: [] };
-    }
+    };
+    first: boolean;
+    last: boolean;
+    numberOfElements: number;
+    size: number;
+    content: FollowedUser[];
+    number: number;
+    sort: {
+        unsorted: boolean;
+        sorted: boolean;
+        empty: boolean;
+    };
+    empty: boolean;
 };
 
-export const getPostsByUser = async (
+/**
+ * Load a paginated list of followers for a user.
+ *
+ * @param userId - The user id whose followers should be fetched.
+ * @param page - The zero-based page index.
+ * @param size - The number of items per page.
+ */
+export const getFollowers = async (
     userId: string,
-    token: string | null = null
-): Promise<{ success: boolean; message: string; posts: Post[] }> => {
+    page: number = 0,
+    size: number = 10
+): Promise<FollowersResponse | null> => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        throw new Error("Utilisateur non authentifié, veuillez vous connecter.");
+    }
+
     try {
         const headers: HeadersInit = {
             "Content-Type": "application/json",
@@ -315,129 +464,25 @@ export const getPostsByUser = async (
             headers.Authorization = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${API_URL}/posts/user/${encodeURIComponent(userId)}`, {
-            method: "GET",
-            headers,
-        });
-
-        if (!response.ok) {
-            return { success: false, message: `Erreur: ${response.status} ${response.statusText}`, posts: [] };
-        }
-
-        const data = await response.json();
-        const posts = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.content)
-                ? data.content
-                : Array.isArray(data?.posts)
-                    ? data.posts
-                    : [];
-
-        return { success: true, message: "Posts par utilisateur trouvés", posts };
-    } catch {
-        return { success: false, message: "Erreur lors de la récupération des posts par utilisateur", posts: [] };
-    }
-};
-
-
-export const likePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-                postId,
-                type: "LIKE",
-            }),
-        });
-
-        if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
+        const response = await fetch(
+            `${API_URL}/users/${userId}/followers?page=${page}&size=${size}`,
+            {
+                method: "GET",
+                headers,
             }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}` };
-        }
-
-        return { success: true, message: "Post liké avec succès" };
-    } catch {
-        return { success: false, message: "Erreur lors de l'ajout du like" };
-    }
-};
-
-export const dislikePost = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions/${postId}`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+        );
 
         if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
-            }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}` };
+            throw new Error(`Erreur: ${response.status} ${response.statusText}`);
         }
 
-        return { success: true, message: "Like retiré avec succès" };
-    } catch {
-        return { success: false, message: "Erreur lors du retrait du like" };
-    }
-};
-
-export const getPostLikedStatus = async (
-    postId: string,
-    token: string
-): Promise<{ success: boolean; message: string; liked: boolean }> => {
-    try {
-        const response = await fetch(`${API_URL}/reactions/posts/${postId}/liked`, {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) {
-            let details = response.statusText;
-            try {
-                const errorBody = (await response.json()) as { message?: string };
-                if (errorBody?.message) {
-                    details = errorBody.message;
-                }
-            } catch {
-                // Keep default statusText.
-            }
-
-            return { success: false, message: `Erreur: ${response.status} ${details}`, liked: false };
+        const data = (await response.json()) as FollowersResponse;
+        return data;
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
         }
 
-        const data = (await response.json()) as { liked?: boolean };
-        return { success: true, message: "Statut like récupéré", liked: Boolean(data?.liked) };
-    } catch {
-        return { success: false, message: "Erreur lors de la récupération du statut like", liked: false };
+        throw new Error("Erreur lors de la récupération des followers", { cause: error });
     }
 };

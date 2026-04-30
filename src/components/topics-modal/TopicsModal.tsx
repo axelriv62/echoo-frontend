@@ -1,8 +1,17 @@
 import { useState, useEffect } from 'react';
-import { getTopic, createTopic, deleteTopic } from '../../hooks/posts';
+import { getTopics, createTopic, deleteTopic } from '../../services/topics.ts';
 import type { Topic } from '../../utils/types';
 import {ROLES_KEY} from "../../utils/constants.ts";
 
+/**
+ * Props accepted by the TopicsModal component.
+ *
+ * isOpen: whether the modal is visible.
+ * onClose: callback to close the modal.
+ * selectedTopicIds: currently selected topic ids (checkbox state).
+ * onTopicsChange: called when the selection changes.
+ * onTopicsUpdated: called after topics are added/deleted to allow parent to refresh.
+ */
 interface TopicsModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -11,6 +20,13 @@ interface TopicsModalProps {
     onTopicsUpdated: () => void;
 }
 
+/**
+ * TopicsModal
+ *
+ * Modal dialog that displays available topics, allows selecting/unselecting them,
+ * and (for admin users) adding or deleting topics. Communicates changes back to
+ * the parent via callbacks.
+ */
 const TopicsModal = ({
                          isOpen,
                          onClose,
@@ -18,35 +34,53 @@ const TopicsModal = ({
                          onTopicsChange,
                          onTopicsUpdated,
                      }: TopicsModalProps) => {
+    // List of topics fetched from the API
     const [topics, setTopics] = useState<Topic[]>([]);
+    // Loading indicator while fetching topics
     const [loading, setLoading] = useState(false);
+    // Controlled input for creating a new topic
     const [newTopicName, setNewTopicName] = useState('');
+    // Flag while add-topic request is in flight
     const [isAddingTopic, setIsAddingTopic] = useState(false);
+    // Error / success feedback strings shown to the user
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+
+    // Read roles from localStorage to determine if current user is an admin.
+    // Stored as an array of role strings; presence of 'ROLE_ADMIN' grants
+    // add/delete permissions in this modal.
     const storedRoles = JSON.parse(localStorage.getItem(ROLES_KEY) ?? '[]') as string[];
     const isAdmin = storedRoles.includes('ROLE_ADMIN')
 
+    // When the modal opens, load topics from the backend.
     useEffect(() => {
         if (isOpen) {
             loadTopics();
         }
     }, [isOpen]);
 
+    /**
+     * Fetch topics from the server and update local state.
+     */
     const loadTopics = async () => {
         setLoading(true);
-        const result = await getTopic();
+        const result = await getTopics();
 
         if (result.success) {
             setTopics(result.topics);
             setError(null);
         } else {
+            // Show API error message
             setError(result.message);
         }
 
         setLoading(false);
     };
 
+    /**
+     * Create a new topic. Only allowed for admins. Shows feedback messages
+     * and triggers a refresh on success.
+     */
     const handleAddTopic = async () => {
         if (!isAdmin) {
             setError("Accès refusé : action réservée aux administrateurs");
@@ -68,9 +102,11 @@ const TopicsModal = ({
         if (result.success) {
             setNewTopicName('');
             setSuccess(result.message);
+            // Refresh list and notify parent that topics changed
             await loadTopics();
             onTopicsUpdated();
 
+            // Clear transient success message after a short timeout
             setTimeout(() => {
                 setSuccess(null);
             }, 2500);
@@ -81,6 +117,10 @@ const TopicsModal = ({
         setIsAddingTopic(false);
     };
 
+    /**
+     * Delete a topic by id. Only admins may delete. Removes the topic from the
+     * parent's selected ids if it was selected and refreshes the list on success.
+     */
     const handleDeleteTopic = async (topicId: string) => {
         if (!isAdmin) {
             setError("Accès refusé : action réservée aux administrateurs");
@@ -94,6 +134,7 @@ const TopicsModal = ({
 
         if (result.success) {
             if (selectedTopicIds.includes(topicId)) {
+                // Remove deleted topic from selection
                 onTopicsChange(selectedTopicIds.filter(id => id !== topicId));
             }
 
@@ -109,6 +150,9 @@ const TopicsModal = ({
         }
     };
 
+    /**
+     * Toggle selection state of a topic and notify parent via onTopicsChange.
+     */
     const handleToggleTopic = (topicId: string) => {
         if (selectedTopicIds.includes(topicId)) {
             onTopicsChange(selectedTopicIds.filter(id => id !== topicId));
@@ -117,6 +161,7 @@ const TopicsModal = ({
         }
     };
 
+    // If modal is closed, render nothing
     if (!isOpen) return null;
 
     return (

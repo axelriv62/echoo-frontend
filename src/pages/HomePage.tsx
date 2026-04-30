@@ -1,27 +1,29 @@
-import {useState, useEffect, useCallback, useRef} from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useNavigate } from "react-router";
-import { getPosts, getTopic, createPost, type CreatePostPayload } from "../hooks/posts";
-import { getUserProfile } from "../services/api";
+import { getPosts, createPost, type CreatePostPayload } from "../services/posts.ts";
+import { getTopics } from "../services/topics.ts";
+import { getUserProfile } from "../services/users.ts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post, Topic } from "../utils/types";
-import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
-import RecommendedPosts from "../components/suggested_post/RecommendedPosts";
+import RecommendedUsers from "../components/recommended-users/RecommendedUsers.tsx";
+import RecommendedPosts from "../components/recommended-posts/RecommendedPosts";
 import TopicsModal from "../components/topics-modal/TopicsModal";
+import { TOKEN_KEY } from "../utils/constants.ts";
 
 interface PostFormState {
     title: string;
     description: string;
-    urlImage: string;
+    urlImage: File | null;
     topicsIds: string[];
     isLoading: boolean;
     error: string | null;
     success: string | null;
 }
 
-const RECOMMENDATION_INTERVAL = 8;
+const RECOMMENDATION_INTERVAL = 10;
 
-const HomePage = ({ token}: { token: string | null; setToken: (token: string | null) => void }) => {
+const HomePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [posts, setPosts] = useState<Post[]>([]);
@@ -29,14 +31,15 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     const [loading, setLoading] = useState(true);
     const [showTopicsModal, setShowTopicsModal] = useState(false);
     const highlightPostId = (location.state as { highlightPostId?: string } | null)?.highlightPostId ?? null;
-    useProfile(token);
-    const { profile: myProfile } = useProfile(token);
+    useProfile();
+    const { profile: myProfile } = useProfile();
     const [ignoredUsersSet, setIgnoredUsersSet] = useState<Set<string>>(new Set(myProfile?.ignoredUsers ?? []));
+    const token = localStorage.getItem(TOKEN_KEY);
 
     const [formData, setFormData] = useState<PostFormState>({
         title: '',
         description: '',
-        urlImage: '',
+        urlImage: null,
         topicsIds: [],
         isLoading: false,
         error: null,
@@ -52,7 +55,30 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
         setLoading(false);
     }, [ignoredUsersSet]);
 
-    // keep a ref to the latest refreshPosts so effects can call it without listing it as dependency
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleRemoveImage = () => {
+        setImagePreview(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setFormData(prev => ({ ...prev, urlImage: file }));
+
+            // Create a local preview
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const refreshPostsRef = useRef(refreshPosts);
     useEffect(() => {
         refreshPostsRef.current = refreshPosts;
@@ -70,7 +96,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     }, [highlightPostId, posts]);
 
     const loadTopics = async () => {
-        const result = await getTopic();
+        const result = await getTopics();
         if (result.success) {
             setTopics(result.topics);
         }
@@ -79,15 +105,13 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     useEffect(() => {
         let isMounted = true;
 
-        // keep local ignored set in sync with profile (defer to avoid sync setState in effect)
         Promise.resolve().then(() => {
             if (isMounted) setIgnoredUsersSet(new Set(myProfile?.ignoredUsers ?? []));
         });
 
         const onIgnoredUsersChanged = async () => {
-            if (!token) return;
             try {
-                const me = await getUserProfile(token);
+                const me = await getUserProfile();
                 setIgnoredUsersSet(new Set(me.ignoredUsers ?? []));
                 if (refreshPostsRef.current) await refreshPostsRef.current();
             } catch {
@@ -117,7 +141,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                 }
 
                 // load topics as well
-                const topicsResult = await getTopic();
+                const topicsResult = await getTopics();
                 if (isMounted && topicsResult.success) {
                     setTopics(topicsResult.topics);
                 }
@@ -164,7 +188,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             setFormData({
                 title: '',
                 description: '',
-                urlImage: '',
+                urlImage: null,
                 topicsIds: [],
                 isLoading: false,
                 error: null,
@@ -176,23 +200,14 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
             setTimeout(() => {
                 setFormData(prev => ({ ...prev, success: null }));
             }, 3000);
+
+            setImagePreview(null)
         } else {
             setFormData(prev => ({
                 ...prev,
                 isLoading: false,
                 error: result.message,
             }));
-        }
-    };
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFormData(prev => ({ ...prev, urlImage: reader.result as string }));
-            };
-            reader.readAsDataURL(file);
         }
     };
 
@@ -210,7 +225,7 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
                 <div
                     key={post.id}
                     id={`post-${post.id}`}
-                    className={isHighlighted ? "rounded-lg ring-2 ring-[#a237ff] ring-offset-2 ring-offset-white" : ""}
+                    className={isHighlighted ? "rounded-2xl ring-2 ring-[#a237ff] ring-offset-2 ring-offset-[#f6efff]" : ""}
                 >
                     <PostCard post={post} onDelete={handlePostDeleted} />
                 </div>
@@ -218,9 +233,9 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
 
             if ((index + 1) % RECOMMENDATION_INTERVAL === 0) {
                 items.push(
-                    <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-                        <RecommendedUsers token={token} onFollowSuccess={refreshPosts} />
-                        <RecommendedPosts token={token} />
+                    <section key={`recommendations-${index}`} className="space-y-6 rounded-2xl border border-[#a237ff]/25 bg-linear-to-br from-[#ffffff] to-[#f8f1ff] p-4 shadow-sm">
+                        <RecommendedUsers onFollowSuccess={refreshPosts} />
+                        <RecommendedPosts />
                     </section>
                 );
             }
@@ -246,130 +261,137 @@ const HomePage = ({ token}: { token: string | null; setToken: (token: string | n
     }
 
     return (
-        <div className="max-w-2xl mx-auto border-l border-r border-[#e5e7eb] min-h-screen">
-            <div className="border-b border-[#e5e7eb] p-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <input
-                        type="text"
-                        placeholder="Titre du post"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        className="w-full text-lg font-semibold bg-transparent placeholder-gray-400 text-[#000000] outline-none border-b border-[#e5e7eb] pb-2"
-                        disabled={formData.isLoading}
-                    />
-
-                    <textarea
-                        placeholder="Quoi de neuf?!"
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full text-xl bg-transparent placeholder-gray-500 text-[#000000] outline-none resize-none"
-                        rows={4}
-                        disabled={formData.isLoading}
-                    />
-
-                    {formData.error && (
-                        <div className="bg-[#ef4444]/10 border border-[#ef4444] text-[#ef4444] px-3 py-2 rounded text-sm">
-                            {formData.error}
-                        </div>
-                    )}
-                    {formData.success && (
-                        <div className="bg-[#10b981]/10 border border-[#10b981] text-[#10b981] px-3 py-2 rounded text-sm">
-                            {formData.success}
-                        </div>
-                    )}
-
-                    {formData.urlImage && (
-                        <div className="relative rounded-2xl overflow-hidden border border-[#e5e7eb] bg-gray-100">
-                            <img
-                                src={formData.urlImage}
-                                alt="Aperçu"
-                                className="w-full h-64 object-cover"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setFormData(prev => ({ ...prev, urlImage: '' }))}
-                                className="absolute top-2 left-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-2 transition"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="flex justify-between items-center pt-4 border-t border-[#e5e7eb]">
-                        <div className="flex gap-2">
-                            <label className="cursor-pointer text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition">
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    className="hidden"
-                                    disabled={formData.isLoading}
-                                />
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
-                                </svg>
-                            </label>
-
-                            <button
-                                type="button"
-                                className="text-[#a237ff] hover:bg-[#a237ff]/10 p-2 rounded-full transition"
-                                onClick={() => setShowTopicsModal(true)}
-                            >
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z" />
-                                </svg>
-                            </button>
-                        </div>
-
-                        {formData.topicsIds.length > 0 && (
-                            <div className="flex flex-wrap gap-2 flex-1 mx-4">
-                                {formData.topicsIds.map((topicId) => (
-                                    <span key={topicId} className="badge-primary">
-                                        {topicNameById.get(topicId) ?? topicId}
-                                        <button
-                                            type="button"
-                                            onClick={() => setFormData(prev => ({
-                                                ...prev,
-                                                topicsIds: prev.topicsIds.filter(id => id !== topicId)
-                                            }))}
-                                            className="cursor-pointer hover:text-[#8a1fb8]"
-                                        >
-                                            ✕
-                                        </button>
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={formData.isLoading || !formData.title.trim() || !formData.description.trim()}
-                            className="btn-primary flex items-center gap-2"
-                        >
-                            {formData.isLoading ? (
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            ) : (
-                                'Poster'
-                            )}
-                        </button>
+        <div className="min-h-screen bg-linear-to-b from-[#f8f1ff] via-[#fcfafe] to-[#ffffff] px-4 py-6">
+            <div className="mx-auto max-w-4xl space-y-6">
+                <div className="overflow-hidden rounded-2xl border border-[#a237ff]/20 bg-white shadow-[0_12px_40px_rgba(162,55,255,0.12)]">
+                    <div className="border-b border-[#a237ff]/15 bg-linear-to-r from-[#a237ff]/20 via-[#a237ff]/10 to-[#ff6b9d]/10 px-4 py-3">
+                        <p className="text-sm font-semibold text-[#5d1a91]">Nouveau post</p>
+                        <p className="text-xs text-gray-600">Partage une idee a la communaute</p>
                     </div>
-                </form>
+                    <div className="p-4">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input
+                                type="text"
+                                placeholder="Titre du post"
+                                value={formData.title}
+                                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                                className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-lg font-semibold text-[#000000] placeholder-gray-400 outline-none focus:border-[#a237ff]/40 focus:ring-2 focus:ring-[#a237ff]/20"
+                                disabled={formData.isLoading}
+                            />
+
+                            <textarea
+                                placeholder="Quoi de neuf?!"
+                                value={formData.description}
+                                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                                className="w-full rounded-xl border border-[#e5e7eb] bg-white px-3 py-3 text-xl text-[#000000] placeholder-gray-500 outline-none resize-none focus:border-[#a237ff]/40 focus:ring-2 focus:ring-[#a237ff]/20"
+                                rows={4}
+                                disabled={formData.isLoading}
+                            />
+
+                            {formData.error && (
+                                <div className="bg-[#ef4444]/10 border border-[#ef4444] text-[#ef4444] px-3 py-2 rounded text-sm">
+                                    {formData.error}
+                                </div>
+                            )}
+                            {formData.success && (
+                                <div className="bg-[#10b981]/10 border border-[#10b981] text-[#10b981] px-3 py-2 rounded text-sm">
+                                    {formData.success}
+                                </div>
+                            )}
+
+                            {imagePreview && (
+                                <div className="relative mt-4 rounded-lg overflow-hidden">
+                                    <img
+                                        src={imagePreview}
+                                        alt="Aperçu"
+                                        className="w-full h-auto max-h-96 object-cover rounded-lg"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleRemoveImage}
+                                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            )}
+
+                            <div className="flex items-center justify-between border-t border-[#e5e7eb] pt-4">
+                                <div className="flex gap-2">
+                                    <label className="cursor-pointer rounded-full p-2 text-[#a237ff] transition hover:bg-[#a237ff]/10">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            className="hidden"
+                                            disabled={formData.isLoading}
+                                        />
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-2 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
+                                        </svg>
+                                    </label>
+
+                                    <button
+                                        type="button"
+                                        className="rounded-full p-2 text-[#a237ff] transition hover:bg-[#a237ff]/10"
+                                        onClick={() => setShowTopicsModal(true)}
+                                    >
+                                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                            <path d="M17.63 5.84C17.27 5.33 16.67 5 16 5L5 5.01C3.9 5.01 3 5.9 3 7v10c0 1.1.9 1.99 2 1.99L16 19c.67 0 1.27-.33 1.63-.84L22 12l-4.37-6.16zM16 17H5V7h11l3.55 5L16 17z" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                {formData.topicsIds.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 flex-1 mx-4">
+                                        {formData.topicsIds.map((topicId) => (
+                                            <span key={topicId} className="badge-primary">
+                                                {topicNameById.get(topicId) ?? topicId}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setFormData(prev => ({
+                                                        ...prev,
+                                                        topicsIds: prev.topicsIds.filter(id => id !== topicId)
+                                                    }))}
+                                                    className="cursor-pointer hover:text-[#8a1fb8]"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={formData.isLoading || !formData.title.trim() || !formData.description.trim()}
+                                    className="btn-primary flex items-center gap-2 shadow-sm shadow-[#a237ff]/30"
+                                >
+                                    {formData.isLoading ? (
+                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        'Poster'
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                {loading ? (
+                    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 text-center text-gray-500 shadow-sm">
+                        <p className="py-8">Chargement des posts...</p>
+                    </div>
+                ) : posts.length === 0 ? (
+                    <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 text-center text-gray-500 shadow-sm">
+                        <p className="py-8">Les posts apparaîtront ici</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6">
+                        {renderFeed()}
+                    </div>
+                )}
             </div>
-
-
-            {loading ? (
-                <div className="p-4 text-center text-gray-500">
-                    <p className="py-8">Chargement des posts...</p>
-                </div>
-            ) : posts.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                    <p className="py-8">Les posts apparaîtront ici</p>
-                </div>
-            ) : (
-                <div className="space-y-6 p-4">
-                    {renderFeed()}
-                </div>
-            )}
 
             <TopicsModal
                 isOpen={showTopicsModal}
