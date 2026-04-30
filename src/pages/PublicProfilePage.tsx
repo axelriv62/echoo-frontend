@@ -3,11 +3,13 @@ import { useNavigate, useParams } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
 import FollowUserButton from "../components/FollowUserButton/FollowUserButton";
 import IgnoreUserButton from "../components/IgnoreUserButton/IgnoreUserButton";
+import BanUserButton from "../components/BanUserButton/BanUserButton";
 import FollowersModal from "../components/followers-modal/FollowersModal";
 import { getFollowers, getMyFollowedUsers, getUserProfile } from "../services/users.ts";
 import { getPostsByUser } from "../services/posts";
 import PostCard from "../components/post-card/PostCard";
 import type { Post } from "../utils/types";
+import { ROLES_KEY } from "../utils/constants.ts";
 
 interface PublicProfilePageProps {
     token: string | null;
@@ -25,6 +27,8 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [postsLoading, setPostsLoading] = useState(false);
     const [postsError, setPostsError] = useState<string | null>(null);
+    const storedRoles = JSON.parse(localStorage.getItem(ROLES_KEY) ?? "[]") as string[];
+    const isAdmin = storedRoles.includes("ROLE_ADMIN");
     const [followersCount, setFollowersCount] = useState<number | null>(null);
     const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
@@ -214,6 +218,7 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                     <h1 className="text-2xl font-bold text-[#a237ff]">Profil</h1>
                     <div className="w-6"></div>
                 </div>
+            </div>
 
                 <div className="overflow-hidden rounded-2xl border border-[#a237ff]/15 bg-white shadow-[0_12px_40px_rgba(162,55,255,0.12)]">
                     {/* Profil Header */}
@@ -239,44 +244,49 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                     <p className="text-gray-600 mb-4">{profile.email}</p>
                                 )}
 
-                                {token && !isOwnProfile && (
-                                    <div className="mb-4 max-w-40">
-                                        {relationsLoading ? (
-                                            <button
-                                                type="button"
-                                                disabled
-                                                className="w-full cursor-wait rounded-full bg-[#a237ff]/40 px-3 py-1.5 text-xs font-semibold text-white"
-                                            >
-                                                Chargement...
-                                            </button>
-                                        ) : (
-                                            <>
-                                                <FollowUserButton
-                                                    key={`${profile.id}-${followedUserIds.has(profile.id) ? 'following' : 'not-following'}`}
+                            {token && !isOwnProfile && (
+                                <div className="mb-4 max-w-40">
+                                    {relationsLoading ? (
+                                        <button
+                                            type="button"
+                                            disabled
+                                            className="w-full rounded-full bg-[#a237ff]/40 text-white text-xs font-semibold py-1.5 px-3 cursor-wait"
+                                        >
+                                            Chargement...
+                                        </button>
+                                    ) : (
+                                        <>
+                                            <FollowUserButton
+                                                key={`${profile.id}-${followedUserIds.has(profile.id) ? 'following' : 'not-following'}`}
+                                                userId={profile.id}
+                                                initialIsFollowing={followedUserIds.has(profile.id)}
+                                            />
+                                            <IgnoreUserButton
+                                                key={`${profile.id}-${isIgnored ? 'ignored' : 'not-ignored'}`}
+                                                userId={profile.id}
+                                                token={token}
+                                                initialIsIgnored={isIgnored}
+                                                onIgnoreSuccess={() => {
+                                                    setIgnoredUserIds((previousIds) => {
+                                                        const nextIds = new Set(previousIds);
+                                                        if (nextIds.has(profile.id)) {
+                                                            nextIds.delete(profile.id);
+                                                        } else {
+                                                            nextIds.add(profile.id);
+                                                        }
+                                                        return nextIds;
+                                                    });
+                                                }}
+                                            />
+                                            {isAdmin && (
+                                                <BanUserButton
                                                     userId={profile.id}
-                                                    initialIsFollowing={followedUserIds.has(profile.id)}
                                                 />
-                                                <IgnoreUserButton
-                                                    key={`${profile.id}-${isIgnored ? 'ignored' : 'not-ignored'}`}
-                                                    userId={profile.id}
-                                                    token={token}
-                                                    initialIsIgnored={isIgnored}
-                                                    onIgnoreSuccess={() => {
-                                                        setIgnoredUserIds((previousIds) => {
-                                                            const nextIds = new Set(previousIds);
-                                                            if (nextIds.has(profile.id)) {
-                                                                nextIds.delete(profile.id);
-                                                            } else {
-                                                                nextIds.add(profile.id);
-                                                            }
-                                                            return nextIds;
-                                                        });
-                                                    }}
-                                                />
-                                            </>
-                                        )}
-                                    </div>
-                                )}
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
 
                                 <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                                     <button
@@ -350,8 +360,8 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                     />
                 )}
             </div>
-        </div>
     );
 };
 
 export default PublicProfilePage;
+
