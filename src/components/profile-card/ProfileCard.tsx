@@ -1,3 +1,11 @@
+// ProfileCard component
+// ---------------------
+// Renders a user's profile summary and an optional inline editor. The
+// component accepts the current profile, loading and error states and
+// delegates updates to the provided onUpdate callback.
+//
+// Inline comments and English docstrings describe the edit flow and
+// state transitions.
 import { useState } from "react";
 import type { UpdateUserProfilePayload, User } from "../../utils/types";
 
@@ -25,6 +33,9 @@ const ProfileCard = ({ profile, loading, error, onUpdate, updating, updateError 
         : "-";
     const accountStatus = profile?.enabled === false ? "désactivé" : "activé";
 
+    // Initialize the editing draft from the provided profile and switch the
+    // component to editing mode. If there is no profile available this is a
+    // no-op.
     const startEditing = () => {
         if (!profile) {
             return;
@@ -40,11 +51,14 @@ const ProfileCard = ({ profile, loading, error, onUpdate, updating, updateError 
         setIsEditing(true);
     };
 
+    // Cancel editing and reset the draft state.
     const stopEditing = () => {
         setIsEditing(false);
         setDraft(null);
     };
 
+    // Handle the form submission: build the payload from the draft and call
+    // the onUpdate callback. If the update succeeds, exit edit mode.
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 

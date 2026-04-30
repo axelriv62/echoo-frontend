@@ -3,21 +3,35 @@ import { useNavigate } from "react-router";
 import { TOKEN_KEY, ROLES_KEY, ID_KEY } from "../../utils/constants";
 import {disable} from "../../services/auth.ts";
 
+/**
+ * Props for the DeactivateAccountButton component.
+ */
 interface DeactivateAccountButtonProps {
     token: string | null;
     setToken: (token: string | null) => void;
 }
 
+/**
+ * DeactivateAccountButton
+ *
+ * Button that allows an authenticated user to deactivate their account.
+ * When confirmed it calls the auth.disable service, clears local storage
+ * tokens/ids and navigates the user back to the login page.
+ */
 const DeactivateAccountButton = ({ token, setToken }: DeactivateAccountButtonProps) => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
 
+    /**
+     * Call the disable endpoint and perform cleanup on success.
+     */
     const handleDeactivate = async () => {
         setIsLoading(true);
         try {
             const result = await disable();
             if (result.success) {
+                // Remove authentication related values from localStorage
                 localStorage.removeItem(TOKEN_KEY);
                 localStorage.removeItem(ROLES_KEY);
                 localStorage.removeItem(ID_KEY);
@@ -32,6 +46,7 @@ const DeactivateAccountButton = ({ token, setToken }: DeactivateAccountButtonPro
         }
     };
 
+    // Hide control when there is no token (user not authenticated)
     if (!token) return null;
 
     return (

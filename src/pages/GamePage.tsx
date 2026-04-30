@@ -1,3 +1,5 @@
+// Easter egg generate by IA
+
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 
