@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useProfile } from "../hooks/useProfile";
-import ProfileCard from "../components/ProfileCard/ProfileCard";
+import ProfileCard from "../components/profile-card/ProfileCard";
 import { ROLES_KEY, TOKEN_KEY } from "../utils/constants";
 import LogoutButton from "../components/logout-button/LogoutButton.tsx";
 import DeactivateAccountButton from "../components/disable-button/DisableButton.tsx";
@@ -9,6 +9,9 @@ import PostCard from "../components/post-card/PostCard";
 import { getPostsByUser } from "../services/posts";
 import type { Post } from "../utils/types";
 
+/**
+ * Profile page for viewing and updating the authenticated user's account and posts.
+ */
 const ProfilePage = ({setToken }: { token: string | null; setToken: (token: string | null) => void }) => {
     const navigate = useNavigate();
     const token = localStorage.getItem(TOKEN_KEY);
@@ -96,6 +99,7 @@ const ProfilePage = ({setToken }: { token: string | null; setToken: (token: stri
     return (
         <div className="min-h-screen bg-linear-to-b from-[#f8f1ff] via-[#fcfafe] to-[#ffffff] px-4 py-6">
             <div className="mx-auto max-w-4xl space-y-6">
+                {/* Account summary and editable profile card. */}
                 <div className="rounded-2xl border border-[#a237ff]/20 bg-white p-4 shadow-[0_12px_40px_rgba(162,55,255,0.12)]">
                     <ProfileCard
                         profile={profile}
@@ -107,6 +111,7 @@ const ProfilePage = ({setToken }: { token: string | null; setToken: (token: stri
                     />
                 </div>
 
+                {/* Current user's posts and deletion handling. */}
                 <section className="space-y-4">
                     <div className="rounded-2xl border border-[#a237ff]/15 bg-white/90 px-4 py-3 shadow-sm">
                         <h2 className="text-base font-semibold text-[#5d1a91]">Mes posts</h2>
@@ -133,6 +138,7 @@ const ProfilePage = ({setToken }: { token: string | null; setToken: (token: stri
                     )}
                 </section>
 
+                {/* Account actions such as logout and deactivation. */}
                 <div className="mx-auto w-full max-w-sm rounded-2xl border border-[#a237ff]/15 bg-white/90 p-4 shadow-sm">
                     <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#7a22bf]">Compte</p>
                     <div className="space-y-2">

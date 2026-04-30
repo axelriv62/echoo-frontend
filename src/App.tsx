@@ -8,13 +8,14 @@ import PublicProfilePage from "./pages/PublicProfilePage.tsx";
 import GamePage from "./pages/GamePage.tsx";
 import ErrorPage from "./pages/ErrorPage.tsx";
 
-// Redirects to login if no token, otherwise renders the element
+// Redirect unauthenticated users to the login page; otherwise render the protected view.
 function ProtectedRoute({element, token}: { element: React.ReactNode; token: string | null; }) {
     return token ? element : <Navigate to="/login" replace />;
 }
 
 function App({ token, setToken }: { token: string | null; setToken: (token: string | null) => void }) {
     return (
+        // Public routes, protected routes, and the fallback error page.
         <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage setToken={setToken} />} />

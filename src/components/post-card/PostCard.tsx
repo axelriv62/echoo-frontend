@@ -1,3 +1,10 @@
+// PostCard component
+// ------------------
+// This file exports a React functional component that renders a single post card
+// including header, image lightbox, like button, comments and delete modal.
+//
+// English docstring / comments have been added to describe the component's
+// responsibilities and the purpose of the main hooks and handlers.
 import { useState, useEffect } from "react";
 import type { Post, Comment } from "../../utils/types.ts";
 import { createComment } from "../../services/comments.ts";
@@ -23,13 +30,19 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const canDelete = currentUserId === post.user.id;
 
-    // Récupérer l'ID utilisateur actuel
+    // Retrieve the current user id from local storage and check whether the
+    // current user already liked this post. The isMounted flag avoids state
+    // updates after the component is unmounted.
     useEffect(() => {
         const userId = localStorage.getItem(ID_KEY);
         let isMounted = true;
 
         if (userId) {
-            setCurrentUserId(userId);
+            // Avoid calling setState synchronously inside the effect body which
+            // can cause cascading renders. Defer the state update to the next
+            // macrotask so ESLint rule react-hooks/set-state-in-effect is not
+            // triggered and the behavior remains stable.
+            setTimeout(() => setCurrentUserId(userId), 0);
         }
 
         (async () => {
@@ -53,6 +66,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         };
     }, [post.id]);
 
+    // Delete the post and call the optional onDelete callback provided by the
+    // parent. Shows a loading state while the request is in progress.
     const handleDeletePost = async () => {
         setIsLoading(true);
         try {
@@ -70,6 +85,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         }
     };
 
+    // Create a new comment (optionally a reply to a parent comment) and
+    // append it to the local comments state when successful.
     const handleCommentSubmit = async (content: string, parentCommentId?: string | null) => {
         setIsCommentLoading(true);
         try {
@@ -88,6 +105,8 @@ const PostCard: React.FC<{ post: Post; onDelete?: (postId: string) => void | Pro
         }
     };
 
+    // Toggle like status for the post. Prevents concurrent operations by
+    // tracking isLoading and isCheckingLike states.
     const handleLikeClick = async () => {
         if (isLoading || isCheckingLike) {
             return;

@@ -1,6 +1,9 @@
 import { useState, useEffect, type MouseEvent } from "react";
 import { banUser, unbanUser } from "../../services/users.ts";
 
+/**
+ * Props for the BanButton component.
+ */
 type BanUserButtonProps = {
     userId: string;
     token?: string | null;
@@ -12,7 +15,16 @@ type BanUserButtonProps = {
     className?: string;
 };
 
-const BanUserButton = ({
+/**
+ * BanButton
+ *
+ * Small control used to ban or unban a user. The component shows a loading
+ * state while the request is in progress and displays a small error message
+ * when the API returns an error. It also emits a global event
+ * ('bannedUsersChanged') to notify other parts of the app when the state
+ * changes.
+ */
+const BanButton = ({
     userId,
     reason = "Violation des regles de la communaute",
     bannedAt,
@@ -21,14 +33,23 @@ const BanUserButton = ({
     onBanSuccess,
     className,
 }: BanUserButtonProps) => {
+    // Loading indicator for network requests
     const [isLoading, setIsLoading] = useState(false);
+    // Local banned state (controlled by parent initialIsBanned)
     const [isBanned, setIsBanned] = useState(initialIsBanned);
+    // Error message string displayed under the button
     const [error, setError] = useState<string | null>(null);
 
+    // Keep local isBanned in sync if parent changes the initial value
     useEffect(() => {
         setIsBanned(initialIsBanned);
     }, [initialIsBanned]);
 
+    /**
+     * Toggle ban state. Stops event propagation to avoid triggering parent
+     * click handlers. Debounces via isLoading guard. Calls provided
+     * onBanSuccess callback when the operation succeeds.
+     */
     const handleBanToggle = async (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation();
 
@@ -49,15 +70,16 @@ const BanUserButton = ({
             });
 
         if (result.success) {
+            // Toggle local state and notify parent if a callback exists
             setIsBanned((previous) => !previous);
             if (onBanSuccess) {
                 await onBanSuccess();
             }
-            // notify other parts of the app that banned users changed
+            // Notify other parts of the app that banned users changed
             try {
                 window.dispatchEvent(new Event("bannedUsersChanged"));
             } catch {
-                // ignore
+                // Silently ignore environments that disallow dispatching
             }
         } else {
             setError(result.message);
@@ -81,4 +103,4 @@ const BanUserButton = ({
     );
 };
 
-export default BanUserButton;
+export default BanButton;

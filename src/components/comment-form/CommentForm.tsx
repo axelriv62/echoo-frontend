@@ -1,6 +1,9 @@
 import { useState } from "react";
 import type { Comment } from "../../utils/types";
 
+/**
+ * Props for the CommentForm component.
+ */
 interface CommentFormProps {
     onSubmit: (content: string, parentCommentId?: string | null) => Promise<void>;
     isLoading?: boolean;
@@ -9,6 +12,12 @@ interface CommentFormProps {
     onCancelReply?: () => void;
 }
 
+/**
+ * CommentForm
+ *
+ * Small form used to submit a comment or a reply. Displays a loading state
+ * while submitting and simple validation to avoid empty comments.
+ */
 const CommentForm: React.FC<CommentFormProps> = ({
                                                      onSubmit,
                                                      isLoading = false,
@@ -19,6 +28,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
     const [content, setContent] = useState("");
     const [error, setError] = useState<string | null>(null);
 
+    /**
+     * Handle form submission: validate and forward to parent onSubmit handler.
+     */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 

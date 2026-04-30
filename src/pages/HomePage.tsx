@@ -6,8 +6,8 @@ import { getUserProfile } from "../services/users.ts";
 import PostCard from "../components/post-card/PostCard";
 import { useProfile } from "../hooks/useProfile";
 import type { Post, Topic } from "../utils/types";
-import RecommendedUsers from "../components/suggested_user/RecommendedUsers.tsx";
-import RecommendedPosts from "../components/suggested_post/RecommendedPosts";
+import RecommendedUsers from "../components/recommended-users/RecommendedUsers.tsx";
+import RecommendedPosts from "../components/recommended-posts/RecommendedPosts";
 import TopicsModal from "../components/topics-modal/TopicsModal";
 import {TOKEN_KEY} from "../utils/constants.ts";
 
