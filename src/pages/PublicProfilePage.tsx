@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router";
 import { usePublicProfile } from "../hooks/useProfile";
 import FollowUserButton from "../components/FollowUserButton/FollowUserButton";
 import IgnoreUserButton from "../components/IgnoreUserButton/IgnoreUserButton";
-import { getMyFollowedUsers, getUserProfile } from "../services/users.ts";
+import FollowersModal from "../components/followers-modal/FollowersModal";
+import { getFollowers, getMyFollowedUsers, getUserProfile } from "../services/users.ts";
 import { getPostsByUser } from "../services/posts";
 import PostCard from "../components/post-card/PostCard";
 import type { Post } from "../utils/types";
@@ -24,6 +25,8 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [postsLoading, setPostsLoading] = useState(false);
     const [postsError, setPostsError] = useState<string | null>(null);
+    const [followersCount, setFollowersCount] = useState<number | null>(null);
+    const [followersModalOpen, setFollowersModalOpen] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -120,6 +123,36 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
             isMounted = false;
         };
     }, [profile?.id]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadFollowersCount = async () => {
+            if (!token || !profile?.id) {
+                if (isMounted) {
+                    setFollowersCount(null);
+                }
+                return;
+            }
+
+            try {
+                const response = await getFollowers(profile.id, 0, 1);
+                if (isMounted && response) {
+                    setFollowersCount(response.totalElements);
+                }
+            } catch {
+                if (isMounted) {
+                    setFollowersCount(0);
+                }
+            }
+        };
+
+        void loadFollowersCount();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [profile?.id, token]);
 
     if (!userId) {
         return (
@@ -245,14 +278,39 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                                     </div>
                                 )}
 
-                                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFollowersModalOpen(true)}
+                                        disabled={!token}
+                                        className="rounded-xl border border-[#a237ff]/15 bg-white/80 px-4 py-3 text-left shadow-sm transition hover:border-[#a237ff]/30 hover:bg-[#a237ff]/5 disabled:cursor-not-allowed disabled:opacity-60"
+                                    >
+                                        <span className="block text-lg font-semibold text-[#1f1330]">
+                                            {followersCount === null ? "..." : followersCount}
+                                        </span>
+                                        <span className="text-xs font-medium uppercase tracking-wide text-[#7a22bf]">
+                                            {followersCount === 1 ? "Follower" : "Followers"}
+                                        </span>
+                                    </button>
+
                                     {profile.followedUsers && profile.followedUsers.length > 0 && (
                                         <div className="rounded-xl border border-[#a237ff]/15 bg-white/80 px-4 py-3 shadow-sm">
-                                            <span className="text-lg font-semibold text-[#1f1330]">
+                                            <span className="block text-lg font-semibold text-[#1f1330]">
                                                 {profile.followedUsers.length}
                                             </span>
                                             <span className="text-xs font-medium uppercase tracking-wide text-[#7a22bf]">
                                                 {profile.followedUsers.length > 1 ? " Utilisateurs suivis" : " Utilisateur suivi"}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {profile.followedPages && profile.followedPages.length > 0 && (
+                                        <div className="rounded-xl border border-[#a237ff]/15 bg-white/80 px-4 py-3 shadow-sm">
+                                            <span className="block text-lg font-semibold text-[#1f1330]">
+                                                {profile.followedPages.length}
+                                            </span>
+                                            <span className="text-xs font-medium uppercase tracking-wide text-[#7a22bf]">
+                                                {profile.followedPages.length > 1 ? " Pages suivies" : " Page suivie"}
                                             </span>
                                         </div>
                                     )}
@@ -283,6 +341,14 @@ const PublicProfilePage = ({ token }: PublicProfilePageProps) => {
                         )}
                     </div>
                 </div>
+
+                {profile && (
+                    <FollowersModal
+                        userId={profile.id}
+                        isOpen={followersModalOpen}
+                        onClose={() => setFollowersModalOpen(false)}
+                    />
+                )}
             </div>
         </div>
     );
