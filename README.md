@@ -1,3 +1,5 @@
+Développement de la partie Frontend en React d'un réseau social, interconnectée avec une API REST fournie par une équipe backend tierce.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
